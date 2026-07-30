@@ -1,0 +1,12 @@
+{
+  "name": "tsubaiso-intelligence",
+  "owner": { "name": "TSUBAISO, Inc." },
+  "description": "ツバイソ株式会社が提供する Tsubaiso Intelligence の配布マーケットプレイスです。",
+  "plugins": [
+    {
+      "name": "tsubaiso-intelligence-skill",
+      "source": "./",
+      "description": "PSA/IMA（Salesforce）業務の参照・データ投入・メタデータ構成・帳票・仕様可視化・更新支援・ローカル API 操作と、導入／ロールアウト／PoC／開発運用ライフサイクル判断を担うスキル群（ti-core ほか）。"
+    }
+  ]
+}

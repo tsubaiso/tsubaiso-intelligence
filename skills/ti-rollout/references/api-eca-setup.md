@@ -1,0 +1,99 @@
+# api スコープ ECA のセットアップ（管理者・組織で1回）
+
+ローカルスクリプト実行（ti-local-automation／ti-data-load）が使う「api スコープの本人接続」の受け皿となる**専用 ECA**を作る。MCP 用 ECA とは別に立てる（MCP は読み書き両用で 1 つのまま）。**フェイルクローズ**（権限セットを割り当てるまで誰も使えない）で作る。
+
+## 1. ECA を新規作成
+
+設定 → クイック検索「外部クライアント」→「外部クライアントアプリケーションマネージャー」→「新規外部クライアントアプリケーション」。
+
+| 項目 | 値 |
+|---|---|
+| 外部クライアントアプリケーション名 | `TI Local Automation` |
+| API 参照名 | `TI_Local_Automation` |
+| 取引先責任者 メール | 管理者のメール |
+| 配信状態 | ローカル |
+
+- 「API (OAuth 設定の有効化)」を展開 →「OAuth を有効化」にチェック
+- コールバック URL: `http://localhost:1717/OauthRedirect`（ローカルヘルパーのループバック）
+- OAuth 範囲（2 つ）: 「API を使用してユーザーデータを管理 (api)」＋「いつでも要求を実行 (refresh_token, offline_access)」。**mcp_api は選ばない**（MCP とは別用途）
+- セキュリティ（チェックを入れる）: 「Proof Key for Code Exchange (PKCE) 拡張を要求」
+- セキュリティ（チェックを外す）: 「Web サーバーフローの秘密が必要」「更新トークンフローの秘密が必要」（残すとループバック方式が失敗する）
+- 作成（利用可能まで最大 30 分）
+
+## 2. 対象者ゲート（フェイルクローズ）
+
+アプリの「ポリシー」→「OAuth ポリシー」→ Permitted Users を「**管理者が承認したユーザーは事前承認済み**」に変更する。権限セットを割り当てるまで誰も使えない安全な状態にする。
+
+## 3. コンシューマ鍵
+
+アプリの「設定」→「OAuth 設定」→「コンシューマー鍵と秘密」→ **コンシューマ鍵**をコピー。接続元の識別子で秘匿情報ではない（各利用者のヘルパーに配布してよい）。**秘密（Consumer Secret）は使わない**。
+
+## 4. 対象者への展開（使い始めるとき）
+
+**フェイルクローズを保ったまま、対象者を絞って開ける。**
+
+1. **利用ゲート用の権限セットを作る**（例: `TI_Local_Automation_User`）。付与は最小限＝「API の有効化（ApiEnabled）」のみ（実操作は本人権限。オブジェクト権限は付けない）。メタデータでデプロイ可。
+2. **ECA にこの権限セットを事前承認として紐付ける**: ECA の「ポリシー」タブ →「アプリケーションポリシー」→「権限セットを選択」で、この権限セットを「選択済みの権限セット」へ移して保存（＝保有者が事前承認される）。
+3. **対象者にこの権限セットを割り当てる**（絞った対象者から）。割当された人だけがこの ECA を使える。
+4. **各利用者は初回だけブラウザで本人 OAuth**（ヘルパー起動）→ リフレッシュトークンを **OS の資格情報ストア**に保管。以後はブラウザなしで本人権限内の API 操作（ti-local-automation／ti-data-load）を行う。手順は §5。
+
+## 5. 利用者側の初回接続（本人・1 回だけ）
+
+**管理者が渡すのは次の 4 項目だけ。利用者が探して見つけるものではない。** コネクタ（MCP）一覧・接続アプリケーションのメタデータ・Setup 画面のどこにも出てこないので、探させると必ず詰まる（§6）。
+
+| 項目 | 値 |
+|---|---|
+| instance_url | 対象 org の My Domain（`https://{組織}.my.salesforce.com`） |
+| client_id | §3 のコンシューマ鍵（接続元の識別子・非秘匿・配布してよい） |
+| redirect_uri | `http://localhost:1717/OauthRedirect` |
+| scope | `api refresh_token` |
+
+**受け渡しの規約**: 実値は本スキルに書かない（組織ごとに異なる設定値であって手順ではない）。利用者の端末の `~/.config/ti-local-automation/config.json`（Windows は `%APPDATA%\ti-local-automation\config.json`）に管理者が置く。AI がここを読めば毎回聞かずに済む。
+
+```json
+{
+  "instance_url": "https://{組織}.my.salesforce.com",
+  "client_id": "{コンシューマ鍵}",
+  "redirect_uri": "http://localhost:1717/OauthRedirect",
+  "scope": "api refresh_token",
+  "token_service": "ti-local-automation",
+  "token_account": "{org の識別名}"
+}
+```
+
+**初回の流れ**（ヘルパーは AI が生成・実行する。利用者は画面操作だけ）:
+
+1. ヘルパーが `localhost:1717` に一時 HTTP サーバーを立て、PKCE（S256）の認可 URL を組み立ててブラウザを開く。**認可 URL は利用者が用意するものではない。**
+2. 利用者は Salesforce のログイン画面で**本人の ID・パスワード（＋MFA）**を入れ「許可」を押す。**client_id を画面に入力する場面はない。**
+3. ヘルパーが認可コードを受け取り、**client_secret なし**でトークンへ交換する（§1 で「秘密が必要」を外しているため成立する）。
+4. リフレッシュトークンを OS の資格情報ストアへ保管する（下表）。
+5. 2 回目以降は保管したトークンから `grant_type=refresh_token` でアクセストークンを更新する（**ブラウザは開かない**）。応答の `refresh_token` が変わっていたら保管を更新する（ローテーション追従）。
+
+**トークンの保管先（OS 別）**: 平文ファイルには置かない。
+
+| OS | 保管先と手段 |
+|---|---|
+| macOS | キーチェーン。保管 `security add-generic-password -U -s {token_service} -a {token_account} -w {refresh_token}` ／ 読み出し `security find-generic-password -s {token_service} -a {token_account} -w`（**実証済み**） |
+| Windows | `%LOCALAPPDATA%\ti-local-automation\refresh.bin` に DPAPI（利用者アカウント＋端末に紐づく暗号化）で保存。PowerShell 組込みの `ConvertFrom-SecureString` / `ConvertTo-SecureString` を `-Key` なしで使うと DPAPI になる（**未実証**） |
+| Linux | libsecret があれば Secret Service（`secret-tool store` / `secret-tool lookup`）。無ければ `~/.config/ti-local-automation/refresh` を `chmod 600`（**未実証**） |
+
+## 6. 詰まりどころ（切り分け）
+
+| 症状 | 原因 | 対処 |
+|---|---|---|
+| client_id が見つからない | コネクタ（MCP）一覧・接続アプリケーションのメタデータ照会・Setup 画面・メール／チャット検索は**いずれも対象外**。この接続は MCP コネクタとは別系統で、利用者に Setup 権限は要らない | §5 の 4 項目を管理者から受け取り config.json に置く |
+| `redirect_uri_mismatch` | ECA のコールバック URL と実行時の値が不一致（ポート・パス・末尾まで完全一致が必要） | 双方を `http://localhost:1717/OauthRedirect` に揃える |
+| 「このアプリケーションを使用する権限がありません」 | §4-2 の ECA 事前承認への権限セット紐付け、または §4-3 の利用者への割当が未了（フェイルクローズの正常な挙動） | §4-2 / §4-3 を確認する |
+| トークン交換で秘密を要求される／失敗する | §1 の「Web サーバーフローの秘密が必要」「更新トークンフローの秘密が必要」のチェックが残っている | 両方を外す（ループバック＋PKCE はシークレットを使わない） |
+| 応答に `refresh_token` が無い | scope に `refresh_token` が無い、または ECA の OAuth 範囲に「いつでも要求を実行」が無い | scope と §1 の OAuth 範囲を確認する |
+| `invalid_client_id` | config.json の client_id が別 org・別 ECA のもの | 対象 org の §3 コンシューマ鍵か確認する |
+| 作成直後に認証が通らない | ECA が利用可能になるまで最大 30 分かかる | 待って再試行する |
+| ポート 1717 が使用中 | 他プロセス（Salesforce CLI の認証中など）が占有している | 終了を待つ。ポートを変えるなら ECA のコールバック URL も同時に変更する |
+
+## 停止
+
+ECA の api スコープ除去、または対象者の権限セット剥奪で能力を停止できる（ライセンス制御と整合）。
+
+## 注意（作成方法の制約）
+
+ECA の OAuth（コンシューマ鍵・`oauthLink`）はプラットフォームが Setup 有効化時に自動生成する。**生のメタデータ直 deploy で OAuth を新規作成しない**（`oauthLink` 無しの `ExtlClntAppOauthSettings` を deploy すると OAuth プラグインが壊れる）。作成は本手順の Setup UI（または匿名 Apex の SOAP `upsertMetadata` ブートストラップ）で行う。
