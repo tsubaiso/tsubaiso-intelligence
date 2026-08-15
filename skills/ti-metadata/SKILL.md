@@ -1,10 +1,8 @@
 ---
-title: ti-metadata — メタデータ設定スキル（PSA/IMA 整合カスタマイズ）
 name: ti-metadata
 description: AI が PSA/IMA と整合してメタデータ＝カスタマイズ（カスタム項目・権限セット・入力規則・承認プロセス・FlexiPage・レポートタイプ・リストビュー・Apexトリガー・Flow オーバーライド・Lightning Web コンポーネント・静的リソース・Visualforce ページ・非トリガ Apex クラス・カスタムメタデータ・共有ルール(SharingRules)/OWD＝共有モデル設定 等）を差分方式で設定する手順とスクリプト。着手前の競合・リスク診断プリフライト（6軸ルーブリック）・疎結合設計原則（P1〜P8）・アップグレード再検証・カスタマイズ設計書／仕様書の出力サイクルを内蔵
-version: 3.1.0
-updated: 2026-08-05
-scope: AI が PSA/IMA（Salesforce マネージドパッケージ）と整合性を保ってメタデータ＝カスタマイズを設定するための手順・規約・効率化スクリプト。容れ物（プラグイン／ロールパック）非依存の自己完結スキル
+version: 3.1.1
+updated: 2026-08-14
 ---
 
 # ti-metadata — メタデータ設定スキル（PSA/IMA 整合カスタマイズ）

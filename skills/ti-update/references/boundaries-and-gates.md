@@ -16,7 +16,7 @@ ti-update は「稼働後のデータ（トランザクション＋マスタ）�
 
 ## 書込前構造ゲート（ti-reference へ委譲）
 
-`function_only` 検出・参照先の有効条件フィルタ（作れない工程の検出・参照先の有効性）は **ti-reference の書込前ゲート（write-index 機能）が正本**。ti-update は**書込直前にこのゲートを参照経由で呼ぶ**（再実装しない＝機構の二重管理を避ける）。ゲートの詳細（構造由来の判定）はここに再掲せず、ti-reference へ委譲する。`function_only` 検出・C5 参照フィルタ・auto_create 両方向はいずれも Atlas MCP `atlas_write_seam` で実装済み（v12.1.0・旧 P0 のローカル未実装を解消）。ゲートが「判定不能／未収録（`found:false`）」を返したら捏造せず人へ引き継ぐ（正本は `ti-reference references/write-index.md`）。
+`function_only` 検出・参照先の有効条件フィルタ（作れない工程の検出・参照先の有効性）は **ti-reference の書込前ゲート（write-index 機能）が正本**。ti-update は**書込直前にこのゲートを参照経由で呼ぶ**（再実装しない＝機構の二重管理を避ける）。ゲートの詳細（構造由来の判定）はここに再掲せず、ti-reference へ委譲する。`function_only` 検出・C5 参照フィルタ・auto_create 両方向はいずれも Atlas MCP `atlas_write_seam` が判定する。ゲートが「判定不能／未収録（`found:false`）」を返したら捏造せず人へ引き継ぐ（正本は `ti-reference references/write-index.md`）。
 
 > ti-reference は書込前ゲートの参照ファイル `references/write-index.md`（実体＝Atlas MCP `atlas_write_seam`）を持つ。書込スキルは書込直前にこの write-index.md を発火点で参照してゲートを呼ぶ（SKILL.md の二層注記と一致）。書くレコード自身の入力規則（VR）の充足は ti-update が書込前に検証する（`input-support.md`）。両者は射程が異なる（構造由来の作成可否 vs レコード自身のVR）。
 
@@ -26,7 +26,7 @@ ti-update は「稼働後のデータ（トランザクション＋マスタ）�
 
 ## 書込本命経路の依存
 
-入力支援の本命経路は明細エディタの**サーバーAPI開放**に依存する（開発チームへ要件依頼済み）。開放前は暫定経路（直接書込＋突合）で成立させ、開放後に本命経路（UI同等）へ寄せる。開放の進捗を追い、気づいた不足は ti-core `references/feedback.md` へ。
+入力支援には2つの経路がある。**本命経路**は明細エディタのサーバー処理を AI/MCP から呼ぶ形で、UI と同等の整合をそのまま得られる。**暫定経路**は直接書込＋突合で、本命経路が使えない組織でも成立する。**到達可否は版番号で判定せず、その組織に現に有るかを自己診断で見る**（ti-core `references/capability-preflight.md`）。本命経路が使えるならそちらへ寄せる。気づいた不足は ti-core `references/feedback.md` へ。
 
 ## ti-core 発火点（このスキルが必ず結ぶ3点）
 
@@ -34,6 +34,6 @@ ti-update は「稼働後のデータ（トランザクション＋マスタ）�
 |---|---|---|
 | 現状仕様を往復で詰める瞬間（突合結果の提示・点検助言の往復） | ti-core `references/spec-roundtrip.md` | 人間判断を仰ぐ往復 |
 | org書込直前（作成・トリガ項目更新・マスタ書込） | ti-core `references/safety-gate.md` | ドラフト提示＋明示承認＋PIIマスキング。入力支援は必ず通す。承認支援は読み取りで書かない |
-| 段階拡張の穴・サーバーAPI未開放・意味定義の不足に気づいた瞬間 | ti-core `references/feedback.md` | ナレッジギャップの記録 |
+| 段階拡張の穴・本命経路が使えないこと・意味定義の不足に気づいた瞬間 | ti-core `references/feedback.md` | ナレッジギャップの記録 |
 
 > 本文の能力スキル名（ti-reference・ti-metadata・ti-core・ti-data-load 等）は配置済みで、フォルダ名＝正準名として辿れる（ti-data-load は `tsubaiso-data-migration` からの改称先）。

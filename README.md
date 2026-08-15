@@ -23,7 +23,7 @@ Tsubaiso Intelligence（サービス）の**配布スキルパッケージ（プ
 
 ## 使い方
 
-1. 標準（ホステッド）Salesforce MCP を接続する（ツバイソヘルプ記事 ID 58638669783065）
+1. 標準（ホステッド）Salesforce MCP を接続する（[Salesforce標準MCPサーバー接続ガイド](https://support.tsubaiso.jp/hc/ja/articles/58638669783065)）
 2. Tsubaiso Atlas MCP を接続する（意味・ルール・定番レシピの配信元）
 3. `skills/ti-reference` のスキルを読み込む
 4. PSA/IMA のデータについて尋ねる（オブジェクト探索・SOQL 作成・結果のリンク化）

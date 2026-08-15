@@ -2,7 +2,7 @@
 
 書込スキル（ti-update／ti-data-load／ti-metadata）が PSA/IMA を作成・更新する直前に読む、書込前構造ゲートの参照エントリ（TI クライアントスキル体系 §8.2）。ゲートは `function_only` 判定・参照先マスタの有効条件（C5 参照フィルタ）・自動生成（auto_create）シームの両方向検出を担う。
 
-**実体＝Atlas MCP `atlas_write_seam`（v12.1.0〜）**: 本ゲートの実体は Tsubaiso Atlas MCP サーバーの `atlas_write_seam(target=<API名>)` ツール。読み取り系（`atlas_explain`／`atlas_recipe`）と同じ薄いクライアント型で、意味・構造スナップショットを配布物に同梱しない。旧 P0 のローカル実体（`scripts/atlas_write_index.py` ＋意味定義スナップショット `semantics_v38.json`）は v12.1.0 で除去した（配布物 同梱ゼロ化）。`function_only` 検出・C5 参照フィルタは旧 P0 で未実装だったが、本ツールで実装済み。
+**実体＝Atlas MCP `atlas_write_seam`（v12.1.0〜）**: 本ゲートの実体は Tsubaiso Atlas MCP サーバーの `atlas_write_seam(target=<API名>)` ツール。読み取り系（`atlas_explain`／`atlas_recipe`）と同じ薄いクライアント型で、意味・構造スナップショットを配布物に同梱しない。ローカルに同梱していた意味定義・構造スナップショットは除去済みで、配布物の同梱はゼロ。作れない工程の検出と参照先の有効条件フィルタも本ツールが判定する。
 
 ## 引き方
 
