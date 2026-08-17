@@ -1,6 +1,6 @@
 {
   "name": "tsubaiso-intelligence-skill",
-  "version": "0.10.1",
+  "version": "0.12.0",
   "description": "Tsubaiso Intelligence Skill — PSA/IMA（Salesforce）業務の参照・データ投入・メタデータ構成・帳票・仕様可視化・更新支援・ローカル API 操作と、導入／ロールアウト／PoC／開発運用ライフサイクル判断を担うスキル群。",
   "author": { "name": "TSUBAISO, Inc." },
   "keywords": ["tsubaiso", "psa", "ima", "salesforce", "customization"]
