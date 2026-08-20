@@ -1,8 +1,8 @@
 ---
 name: ti-spec-view
 description: PSA/IMA導入後に顧客がorgへ加えたカスタマイズ仕様を可視化し、ブラックボックス化を解消する能力スキル。TRIGGER when 顧客固有カスタマイズ（カスタムオブジェクト・項目・入力規則・フロー）の一覧化、標準との差分ハイライト、各カスタマイズの業務的意味の記述・訂正・確信度/鮮度の確認、当社・パートナーの許可つきカスタマイズ把握。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、レコードの作成・更新・入力支援は ti-update、実装形態の判断は ti-lifecycle、レコードを検索して数値を出すだけは ti-reference。
-version: 0.1.5
-updated: 2026-07-21
+version: 0.1.6
+updated: 2026-08-19
 ---
 
 # ti-spec-view — 仕様可視化
@@ -27,6 +27,7 @@ PSA/IMA を導入した顧客が org へ加えた**カスタマイズ仕様を�
 
 | チェックポイント | 読む／呼ぶ | 渡す・確認するもの |
 |---|---|---|
+| **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md` | 同梱 `.claude-plugin/plugin.json` の版 |
 | 顧客固有カスタマイズを列挙する・標準との差分の素材を作る | `references/structure-enumeration.md` | 対象オブジェクト・入力規則/フローの取得経路 |
 | カスタマイズの意味付けを持つ・二層の置き場・データモデルを扱う・IP保護2軸を確認する | `references/overlay-model.md` | 対象カスタマイズ・意味付け・author帰属 |
 | 一覧・差分を出力する・鮮度を表示する・誤誘導を防ぐ・段階導入を判断する | `references/visualization-output.md` | 出力形態・鮮度状態・author帰属/確信度 |

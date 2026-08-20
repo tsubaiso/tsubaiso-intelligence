@@ -1,8 +1,8 @@
 ---
 name: ti-report
 description: 【ベータ】PSA/IMA顧客の帳票（見積・請求・注文・納品・検収 等）を自社レイアウト・項目へカスタマイズする能力スキル。TRIGGER when 帳票テンプレの新規作成・調整、データの流し込み、押印/DRAFT分岐の組み込み、帳票に出す項目の追加、帳票出力ボタン/描画面のorg配置、帳票の美観仕上げ、帳票項目マッピング設計書・カスタマイズ仕様書の出力と継続修正サイクル。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、文書→レコードの取込・入力支援は ti-update、導入プロジェクトの工程進行は ti-onboarding。
-version: 0.2.0
-updated: 2026-08-15
+version: 0.2.1
+updated: 2026-08-19
 ---
 
 # ti-report — 帳票カスタマイズ
@@ -28,6 +28,7 @@ PSA/IMA を使う顧客の帳票を、自社のレイアウト・項目に合わ
 
 | チェックポイント | 読む／呼ぶ | 渡す・確認するもの |
 |---|---|---|
+| **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md` | 同梱 `.claude-plugin/plugin.json` の版 |
 | テンプレを作る・差込点を調整する・データを流し込む・意味定義を対応づける・押印/DRAFT分岐を組む | `references/template-and-mapping.md` | 帳票種別・源データの有無・承認状態の判定項目 |
 | 帳票をorgのレコードページに載せる・帳票に出す項目を増やす・反復調整して確定版を配備する | `references/deploy-and-fields.md` | 配置先・追加項目・配備する束 |
 | 帳票を作った後に設計書を出す・カスタマイズ仕様書を提示する・指示を反映して回す | `references/report-design-cycle.md` | 対象帳票の版・現状マッピング・変更指示 |

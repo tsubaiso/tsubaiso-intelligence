@@ -1,0 +1,117 @@
+# 配布用の受け皿（顧客の private 複製リポジトリ）に .github/workflows/upstream-sync.yml として置く。
+# 役割は 2 つ。
+#   (1) 上流（ツバイソの公開リポジトリ）に新しい版が出たら追従 PR を立てる
+#   (2) その PR が一定日数マージされないまま滞留していたら PR にコメントで知らせる
+# 置いたあとリポジトリの Settings > Actions > General > Workflow permissions で
+# 「Allow GitHub Actions to create and approve pull requests」を有効にすること。
+name: Tsubaiso Intelligence の追従
+
+on:
+  schedule:
+    # 毎日 09:00 JST（= 00:00 UTC）
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_URL: https://github.com/tsubaiso/tsubaiso-intelligence.git
+  SYNC_BRANCH: sync/upstream
+  BASE_BRANCH: main
+  STALE_DAYS: '7'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 複製を取得
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: 上流を取得
+        run: |
+          git remote add upstream "$UPSTREAM_URL"
+          git fetch upstream main
+
+      - name: 追従すべき差分があるか判定
+        id: check
+        run: |
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "上流に新しい内容はありません。"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(git show upstream/main:.claude-plugin/plugin.json | jq -r .version)
+            echo "上流の版: ${VERSION}"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 追従ブランチを更新
+        if: steps.check.outputs.changed == 'true'
+        run: git push --force origin "upstream/main:refs/heads/${SYNC_BRANCH}"
+
+      - name: 追従 PR を作成（既にあればブランチ更新のみ）
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          if [ -n "$(gh pr list --head "$SYNC_BRANCH" --state open --json number -q '.[0].number')" ]; then
+            echo "既存の追従 PR があります。ブランチを更新して終了します。"
+            exit 0
+          fi
+          {
+            echo "公開リポジトリ https://github.com/tsubaiso/tsubaiso-intelligence の更新を取り込みます。"
+            echo ""
+            echo "この PR をマージすると、組織マーケットプレイスの同期が発火し、利用者へ新しい版が届きます。"
+            echo ""
+            echo "差分は公開リポジトリの内容そのものです。複製側で独自の変更を加えていない限り、競合は起きません。"
+          } > "${RUNNER_TEMP}/pr-body.md"
+          gh pr create \
+            --base "$BASE_BRANCH" \
+            --head "$SYNC_BRANCH" \
+            --title "Tsubaiso Intelligence Skill v${VERSION} に追従" \
+            --body-file "${RUNNER_TEMP}/pr-body.md"
+
+      - name: 未マージのまま滞留していたら知らせる
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR=$(gh pr list --head "$SYNC_BRANCH" --state open --json number,createdAt --jq '.[0] // empty')
+          if [ -z "$PR" ]; then
+            echo "未マージの追従 PR はありません。"
+            exit 0
+          fi
+          NUMBER=$(echo "$PR" | jq -r .number)
+          CREATED=$(echo "$PR" | jq -r .createdAt)
+          AGE=$(( ( $(date -u +%s) - $(date -u -d "$CREATED" +%s) ) / 86400 ))
+          if [ "$AGE" -lt "$STALE_DAYS" ]; then
+            echo "滞留 ${AGE} 日。しきい値 ${STALE_DAYS} 日に達していません。"
+            exit 0
+          fi
+          LAST=$(gh pr view "$NUMBER" --json comments --jq '[.comments[] | select(.body | contains("<!-- upstream-sync-stale -->")) | .createdAt] | last // empty')
+          if [ -n "$LAST" ]; then
+            SINCE=$(( ( $(date -u +%s) - $(date -u -d "$LAST" +%s) ) / 86400 ))
+            if [ "$SINCE" -lt "$STALE_DAYS" ]; then
+              echo "${SINCE} 日前に知らせ済みです。"
+              exit 0
+            fi
+          fi
+          {
+            echo "<!-- upstream-sync-stale -->"
+            echo "この追従 PR は ${AGE} 日マージされていません。"
+            echo ""
+            echo "マージされるまで、利用者の手元には新しい版が届きません。利用者からは「できるはずのことができない」という形でしか気づけないため、放置すると原因の分からない不具合として現れます。"
+            echo ""
+            echo "配る判断はこのリポジトリの管理者にあります。内容を確認してマージするか、見送る場合はその理由をコメントに残してください。"
+          } > "${RUNNER_TEMP}/stale.md"
+          gh pr comment "$NUMBER" --body-file "${RUNNER_TEMP}/stale.md"

@@ -1,8 +1,8 @@
 ---
 name: ti-poc
 description: 契約前の PoC・商談・社内検証で見込み客に「導入が簡単・速い」を体験させるトライアル体験スキル（契約前寄り）。TRIGGER when トライアル環境での価値実証、業務プロセスの可視化・理解、サンプルデータでの多軸集計デモ、少量の自社マスタや注文書・請求書を取り込む体験、デモ用サンプルデータの準備。DO NOT TRIGGER when 本番導入プロジェクトの工程進行は ti-onboarding、実装形態の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
-version: 0.1.6
-updated: 2026-07-21
+version: 0.1.7
+updated: 2026-08-19
 ---
 
 # ti-poc — PoC・商談（トライアル体験）
@@ -31,6 +31,7 @@ updated: 2026-07-21
 
 | チェックポイント | 読む／呼ぶ | 渡す・確認するもの |
 |---|---|---|
+| **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md` | 同梱 `.claude-plugin/plugin.json` の版 |
 | どの体験を・どの順で見せるか段取りする瞬間 | `references/experience-flow.md` | 買い手の業務・現在の体験・環境（トライアル） |
 | デモデータを用意する・多軸集計の実演台本を組む瞬間 | `references/demo-data-and-scenario.md` | 業種プロファイル・見せる集計軸・台本のテンポ |
 | poc モードの挙動・onboarding への引き継ぎ・ロール別出し分けを決める瞬間 | `references/mode-and-handoff.md` | 契約状態・データ規模・ロール |

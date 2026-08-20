@@ -1,8 +1,8 @@
 ---
 name: ti-lifecycle
 description: 顧客orgカスタマイズを「どの実装形態で・いつ作るか」で判断する開発運用ライフサイクル判断スキル（局面に依存しない）。TRIGGER when 個別要件を宣言的（Flow/入力規則/数式/承認）・Apex・外部スクリプト・製品機能化のどれで実装するかの選択、Anonymous Apex で作ってよいか（設計・開発フェーズ限定・sandbox/トライアル）／運用フェーズへ移行してよいかの判断、着手前ゲートの適用。DO NOT TRIGGER when 導入プロジェクト全体の工程進行は ti-onboarding、契約前の体験演出は ti-poc、メタデータ配備の機構そのものは ti-metadata、個別レコードの申請前・承認前チェックは ti-update。
-version: 0.1.10
-updated: 2026-07-23
+version: 0.1.11
+updated: 2026-08-19
 ---
 
 # ti-lifecycle — 開発運用ライフサイクル判断
@@ -26,6 +26,7 @@ updated: 2026-07-23
 
 | チェックポイント | 読む／呼ぶ | 渡す・確認するもの |
 |---|---|---|
+| **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md` | 同梱 `.claude-plugin/plugin.json` の版 |
 | 要件をどの実装形態で作るか判断する瞬間（宣言的／Apex／外部／製品機能化） | `references/implementation-form.md` | 要件の性質・継続保守の主体 |
 | Anonymous Apex で作ってよいか・運用へ移してよいか判断する瞬間 | `references/anonymous-apex-policy.md` | 現在のフェーズ・書込先org の種別 |
 | アジャイル構築の着手前（フェーズ判定・実装形態の確定） | `references/dev-phase-playbook.md` | 現在のフェーズ・要件の性質 |

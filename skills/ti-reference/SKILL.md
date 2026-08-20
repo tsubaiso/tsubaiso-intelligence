@@ -1,8 +1,8 @@
 ---
 name: ti-reference
 description: 'ツバイソPSA/IMA（Salesforce）の業務データを参照・集計するときに使う。経費・売上（見積〜受注〜納品〜売上〜請求〜入金消込〜手形電債〜EC連携）・調達（発注〜検収〜仕入経費〜支払・発注EC/仕入先EC）・制作（制作指図〜工数〜原価計算票・進行基準）・管理会計・案件・返品・与信・契約・勤怠・マスタ（通貨/為替/銀行/社員/人件費レート/価格表）・在庫（IMA 倉庫/棚/ロット/受払/月次）・財務記録（汎用仕訳・会計連携）・管理会計2への計上連携のデータを、標準Salesforce MCPで取得するためのスキル。意味・ルール・定番SOQLレシピは Tsubaiso Atlas MCPサーバー（atlas_domain_index／atlas_explain／atlas_recipe）から実行時に取得し、構造（型・ラベル・関係）は利用組織のdescribeで補完する。PSA/IMAのオブジェクトや項目を探すとき、SOQLを組み立てるとき、結果をリンク付きで返すときに必ず読む。出力は業務言語のみとし、API名・内部項目名は説明文に出さない。'
-version: 12.2.2
-updated: 2026-08-14
+version: 12.2.3
+updated: 2026-08-19
 ---
 
 # ti-reference — PSA/IMA参照の知識層（Tsubaiso Atlas MCP クライアント）
@@ -13,6 +13,7 @@ updated: 2026-08-14
 
 ## 前提
 
+- **そのセッションで最初に TI のスキルを使うときは、依頼の内容を問わず ti-core `references/version-freshness.md` を読み、同梱の版と公開されている最新版を照合する**（1 セッション 1 回。古ければ本題の前に 1 行告げ、そのうえで本題は進める）
 - 標準（ホステッド）Salesforce MCPが接続済みであること（接続手順は[Salesforce標準MCPサーバー接続ガイド](https://support.tsubaiso.jp/hc/ja/articles/58638669783065)）
 - **Tsubaiso Atlas MCPが接続済みであること**（意味・ルール・レシピの配信元。参照系4ツール `atlas_domain_index`／`atlas_explain`／`atlas_recipe`／`atlas_drift_check`、および作成・更新タスク時の書込前ゲート `atlas_write_seam`。利用可否はPSA契約のエンタイトルメントで判定され、失効時はツール応答が403になる）
 - 利用組織にPSA（必要に応じてIMA）パッケージが導入済みであること
