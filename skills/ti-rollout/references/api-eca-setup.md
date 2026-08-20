@@ -67,15 +67,21 @@
 2. 利用者は Salesforce のログイン画面で**本人の ID・パスワード（＋MFA）**を入れ「許可」を押す。**client_id を画面に入力する場面はない。**
 3. ヘルパーが認可コードを受け取り、**client_secret なし**でトークンへ交換する（§1 で「秘密が必要」を外しているため成立する）。
 4. リフレッシュトークンを OS の資格情報ストアへ保管する（下表）。
-5. 2 回目以降は保管したトークンから `grant_type=refresh_token` でアクセストークンを更新する（**ブラウザは開かない**）。応答の `refresh_token` が変わっていたら保管を更新する（ローテーション追従）。
+5. 2 回目以降は保管したトークンから `grant_type=refresh_token` でアクセストークンを更新する（**ブラウザは開かない**）。応答に `refresh_token` が含まれていたら保管を更新する（ローテーション追従）。**既定ではローテーションしないので、通常は応答に含まれない。** 返ったときだけ更新すればよく、返らないことを異常として扱わない。
 
-**トークンの保管先（OS 別）**: 平文ファイルには置かない。
+**トークンの保管先（OS 別）**: **原則として平文ファイルには置かない。** 例外は Linux で Secret Service が使えない場合だけで、そのときに限り権限を絞った平文ファイルを使う。
 
 | OS | 保管先と手段 |
 |---|---|
-| macOS | キーチェーン。保管 `security add-generic-password -U -s {token_service} -a {token_account} -w {refresh_token}` ／ 読み出し `security find-generic-password -s {token_service} -a {token_account} -w`（**実証済み**） |
-| Windows | `%LOCALAPPDATA%\ti-local-automation\refresh.bin` に DPAPI（利用者アカウント＋端末に紐づく暗号化）で保存。PowerShell 組込みの `ConvertFrom-SecureString` / `ConvertTo-SecureString` を `-Key` なしで使うと DPAPI になる（**未実証**） |
-| Linux | libsecret があれば Secret Service（`secret-tool store` / `secret-tool lookup`）。無ければ `~/.config/ti-local-automation/refresh` を `chmod 600`（**未実証**） |
+| macOS | キーチェーン。保管 `security add-generic-password -U -s {token_service} -a {token_account} -w` ／ 読み出し `security find-generic-password -s {token_service} -a {token_account} -w`（**実証済み**） |
+| Windows | `%LOCALAPPDATA%\ti-local-automation\refresh_{token_account}.bin` に DPAPI（利用者アカウント＋端末に紐づく暗号化）で保存。PowerShell 組込みの `ConvertFrom-SecureString` / `ConvertTo-SecureString` を `-Key` なしで使うと DPAPI になる（**未実証**） |
+| Linux | libsecret があれば Secret Service（`secret-tool store` / `secret-tool lookup`）。無ければ `~/.config/ti-local-automation/refresh_{token_account}` を `chmod 600`（**未実証**） |
+
+**トークンの値をコマンドライン引数に置かない [REQUIRED]。** `-w` に値を書くとプロセス一覧とシェル履歴へ露出する。`-w` は値なしで呼び、対話入力で渡す（上表の macOS がこの形）。他 OS でも標準入力から渡し、コマンド行に残さない。
+
+**保管名に `token_account` を含めるのは、複数の組織を使い分けるため。** macOS は `-a {token_account}` で分離できるが、Windows と Linux のフォールバックは固定名にすると 2 つ目の組織で上書きになる。
+
+**config とトークンで置き場所を分けているのは意図的。** Windows では config を `%APPDATA%`（ローミングされる）、トークンを `%LOCALAPPDATA%`（端末ローカル）に置く。DPAPI の暗号化が利用者アカウントと端末に紐づくため、トークンを別の端末へ持ち回っても復号できない。
 
 ## 6. 詰まりどころ（切り分け）
 
@@ -85,7 +91,7 @@
 | `redirect_uri_mismatch` | ECA のコールバック URL と実行時の値が不一致（ポート・パス・末尾まで完全一致が必要） | 双方を `http://localhost:1717/OauthRedirect` に揃える |
 | 「このアプリケーションを使用する権限がありません」 | §4-2 の ECA 事前承認への権限セット紐付け、または §4-3 の利用者への割当が未了（フェイルクローズの正常な挙動） | §4-2 / §4-3 を確認する |
 | トークン交換で秘密を要求される／失敗する | §1 の「Web サーバーフローの秘密が必要」「更新トークンフローの秘密が必要」のチェックが残っている | 両方を外す（ループバック＋PKCE はシークレットを使わない） |
-| 応答に `refresh_token` が無い | scope に `refresh_token` が無い、または ECA の OAuth 範囲に「いつでも要求を実行」が無い | scope と §1 の OAuth 範囲を確認する |
+| **初回の**トークン交換の応答に `refresh_token` が無い | scope に `refresh_token` が無い、または ECA の OAuth 範囲に「いつでも要求を実行」が無い | scope と §1 の OAuth 範囲を確認する。なお**更新時**の応答に含まれないのは正常（既定でローテーションしないため・§5 の 5） |
 | `invalid_client_id` | config.json の client_id が別 org・別 ECA のもの | 対象 org の §3 コンシューマ鍵か確認する |
 | 作成直後に認証が通らない | ECA が利用可能になるまで最大 30 分かかる | 待って再試行する |
 | ポート 1717 が使用中 | 他プロセス（Salesforce CLI の認証中など）が占有している | 終了を待つ。ポートを変えるなら ECA のコールバック URL も同時に変更する |
