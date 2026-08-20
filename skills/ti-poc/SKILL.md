@@ -1,8 +1,8 @@
 ---
 name: ti-poc
 description: 契約前の PoC・商談・社内検証で見込み客に「導入が簡単・速い」を体験させるトライアル体験スキル（契約前寄り）。TRIGGER when トライアル環境での価値実証、業務プロセスの可視化・理解、サンプルデータでの多軸集計デモ、少量の自社マスタや注文書・請求書を取り込む体験、デモ用サンプルデータの準備。DO NOT TRIGGER when 本番導入プロジェクトの工程進行は ti-onboarding、実装形態の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
-version: 0.1.7
-updated: 2026-08-19
+version: 0.2.0
+updated: 2026-08-20
 ---
 
 # ti-poc — PoC・商談（トライアル体験）
@@ -36,6 +36,7 @@ updated: 2026-08-19
 | デモデータを用意する・多軸集計の実演台本を組む瞬間 | `references/demo-data-and-scenario.md` | 業種プロファイル・見せる集計軸・台本のテンポ |
 | poc モードの挙動・onboarding への引き継ぎ・ロール別出し分けを決める瞬間 | `references/mode-and-handoff.md` | 契約状態・データ規模・ロール |
 | 体験1の理解可視化・体験2の多軸集計を出す瞬間 | ti-reference の該当 reference（`experience-flow.md` が案内） | 対象プロセス・意味定義の参照点・見せる軸 |
+| **業務プロセスフロー図・データのつながり図・業務モデル図を描く直前** | ti-reference `SKILL.md §業務プロセスの図・順番を描くとき`（`references/experience-flow.md` が案内） | 正準シーケンス（レコードができる順番）。**記憶や受領資料の日付順で順番を振らない** |
 | 現状のカスタマイズを把握・可視化する瞬間 | ti-spec-view の該当 reference | 対象 org・可視化の範囲 |
 | デモデータ準備・体験3の自社マスタ取込で投入が要る瞬間 | ti-data-load の該当 reference（大量 I/O はスクリプト経路） | 投入シナリオ・dry-run→突合の前提 |
 | 体験4の自社文書→取引作成が要る瞬間 | ti-update の該当 reference（レイアウト解析資産は ti-report 側） | 対象文書・意味定義マッピング |
@@ -51,7 +52,7 @@ updated: 2026-08-19
 
 | reference | 何を定義するか |
 |---|---|
-| `references/experience-flow.md` | 4体験マップ（各体験で呼ぶ層2能力・理解→集計→マスタ→文書のナラティブ）＋体験連続性（トライアル→PoC→導入→稼働後）＋驚きの源泉＝AI 固有性の設計原則（語り口の規律） |
+| `references/experience-flow.md` | 4体験マップ（各体験で呼ぶ層2能力・理解→集計→マスタ→文書のナラティブ）＋体験連続性（トライアル→PoC→導入→稼働後）＋驚きの源泉＝AI 固有性の設計原則（語り口の規律）＋**図を描く直前に正準シーケンスを引く発火点**（手順の正本は ti-reference） |
 | `references/demo-data-and-scenario.md` | デモデータ作成ワークフロー（ti-data-load をワークフロー設定で呼ぶ・業種プロファイル・山と谷の型）＋多軸集計の軸セットの型＋実演台本の型（軸切替のテンポ・待ち時間ゼロ・ROI 対比） |
 | `references/mode-and-handoff.md` | poc モードの挙動軸・poc⇄onboarding の引き継ぎ（契約成立でのモード遷移・未判定既定）・ロール別の出し分け・段階導入と二層モデル・安全ゲート ≠ ライセンス制御の区別 |
 
