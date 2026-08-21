@@ -57,7 +57,7 @@
   "redirect_uri": "http://localhost:1717/OauthRedirect",
   "scope": "api refresh_token",
   "token_service": "ti-local-automation",
-  "token_account": "{org の識別名}"
+  "token_account": "{org の識別名・組織ごとに一意にする}"
 }
 ```
 
@@ -73,13 +73,49 @@
 
 | OS | 保管先と手段 |
 |---|---|
-| macOS | キーチェーン。保管 `security add-generic-password -U -s {token_service} -a {token_account} -w` ／ 読み出し `security find-generic-password -s {token_service} -a {token_account} -w`（**実証済み**） |
+| macOS | キーチェーン（`security add-generic-password` / `security find-generic-password`）。**呼び方は下記の「保管と読み戻しの規律」のとおりで、表の行を素で実行しない**（値が空のまま保管される・トークンが標準出力に出る） |
 | Windows | `%LOCALAPPDATA%\ti-local-automation\refresh_{token_account}.bin` に DPAPI（利用者アカウント＋端末に紐づく暗号化）で保存。PowerShell 組込みの `ConvertFrom-SecureString` / `ConvertTo-SecureString` を `-Key` なしで使うと DPAPI になる（**未実証**） |
 | Linux | libsecret があれば Secret Service（`secret-tool store` / `secret-tool lookup`）。無ければ `~/.config/ti-local-automation/refresh_{token_account}` を `chmod 600`（**未実証**） |
 
-**トークンの値をコマンドライン引数に置かない [REQUIRED]。** `-w` に値を書くとプロセス一覧とシェル履歴へ露出する。`-w` は値なしで呼び、対話入力で渡す（上表の macOS がこの形）。他 OS でも標準入力から渡し、コマンド行に残さない。
+### 保管と読み戻しの規律 [REQUIRED]
 
-**保管名に `token_account` を含めるのは、複数の組織を使い分けるため。** macOS は `-a {token_account}` で分離できるが、Windows と Linux のフォールバックは固定名にすると 2 つ目の組織で上書きになる。
+**この節の4点は一体で守る。** どれか1つを外すと、トークンが露出するか、空のまま保管されて次の接続で初めて壊れる。
+
+**1. 値をコマンドライン引数に置かない。** `-w` に値を書くとプロセス一覧とシェル履歴へ露出する。`-w` は値なしで呼び、標準入力から渡す。他 OS でも標準入力から渡し、コマンド行に残さない。**`printf` と `[` はシェル組込みを使う**（POSIX シェルでは組込みなので引数は argv に出ないが、`/usr/bin/printf` や `env printf` へ落とすと載る）。
+
+**2. 保管する前に値そのものを検査する。** 空文字や `null`（欠損キーを文字列で返す JSON 抽出の既定値）をそのまま保管すると、**手順3の突き合わせが成立してしまい「保管できた」と判定される**。しかも §5 の 5 のとおり更新時の応答には通常 `refresh_token` が含まれないので、その値で上書きすると保管済みの正しいトークンが消える。
+
+**3. macOS の `-w`（値なし）へは同じ値を2行送る。** 入力と確認の2回を読むため、1回だけ流すと保管に失敗する。**失敗の出方が分かりにくい**——1回だけ流すと `passwords don't match` が出るが `security` の終了コードは 0 で、**キーチェーンの項目は作られ値だけが空**になり、読み出しも終了コード 0 で空文字を返す。**「保管できた」とみなす材料が終了コードにも項目の有無にも無い。**（2026-08-20・macOS 26.3.1 の1端末で実測。OS が上がったら再確認する。**2行送るのは macOS 固有**で、`secret-tool` は1行しか読まない。）
+
+**4. 読み戻した値を表示しない。** `security find-generic-password -w` は値を標準出力へ出すので、確認のつもりで単体で実行すると**リフレッシュトークンが画面・ログ・会話へ残る**。比較の中で使い、一致したかどうかだけを出す。
+
+```sh
+# $TOKEN         = 初回のトークン交換（§5 の 3）で得た refresh_token
+#                  更新時（§5 の 5）は応答に含まれたときだけ再保管する
+# $TOKEN_SERVICE = config.json の token_service
+# $TOKEN_ACCOUNT = config.json の token_account
+case "$TOKEN" in "" | null) echo "refresh_token を取得できていません" >&2; return 1 ;; esac
+printf '%s\n%s\n' "$TOKEN" "$TOKEN" | security add-generic-password -U -s "$TOKEN_SERVICE" -a "$TOKEN_ACCOUNT" -w
+[ "$(security find-generic-password -s "$TOKEN_SERVICE" -a "$TOKEN_ACCOUNT" -w 2>/dev/null)" = "$TOKEN" ] \
+  || { echo "キーチェーンへの保管に失敗しました" >&2; return 1; }
+```
+
+（スクリプトファイルとして実行するなら `return 1` を `exit 1` に読み替える。対話セッションで `exit` を使うとシェルごと終了する。）
+
+### 保管の識別に組織を分ける値を含める [REQUIRED]
+
+複数の組織を使い分けるため、**経路によらず** `token_account` を保管の識別に含める。
+
+| 経路 | 識別の入れどころ | 備考 |
+|---|---|---|
+| macOS キーチェーン | `-a` の値 | 上の規律の呼び方で渡す |
+| Linux Secret Service | `store` の属性と `lookup` 側の同じ属性 | `secret-tool store --label="TI local automation ($TOKEN_ACCOUNT)" service "$TOKEN_SERVICE" account "$TOKEN_ACCOUNT"` に値を**1行**流す／`secret-tool lookup service "$TOKEN_SERVICE" account "$TOKEN_ACCOUNT"` で取る（**未実証**。`secret-tool` は属性の組で項目を特定するため、`account` を落とすと 2 つ目の組織で衝突しうる） |
+| Windows のファイル保管 | ファイル名の `refresh_{token_account}.bin` | DPAPI で暗号化。値は `Read-Host -AsSecureString` 等で受け、コマンド行に置かない |
+| Linux のファイル保管（フォールバック） | ファイル名の `refresh_{token_account}` | `chmod 600` の平文 |
+
+**`token_account` は組織ごとに異なる値にする [REQUIRED]。** 規約に従って識別へ含めていても、2 つの組織に同じ識別名を置けば同じことが起きる。管理者が §5 の `config.json` を置くときに、組織で一意になる値（組織の識別名・My Domain のホスト名など）を入れる。
+
+**固定名にすると、2 つ目の組織を登録した時点で 1 つ目のトークンが黙って消える**（macOS で実測。`-a` を固定したまま 2 回書くと後の値だけが残る）。**上書きはエラーにならない**ので、気づくのは 1 つ目の組織へ接続しようとしたときになる。
 
 **config とトークンで置き場所を分けているのは意図的。** Windows では config を `%APPDATA%`（ローミングされる）、トークンを `%LOCALAPPDATA%`（端末ローカル）に置く。DPAPI の暗号化が利用者アカウントと端末に紐づくため、トークンを別の端末へ持ち回っても復号できない。
 
@@ -93,6 +129,8 @@
 | トークン交換で秘密を要求される／失敗する | §1 の「Web サーバーフローの秘密が必要」「更新トークンフローの秘密が必要」のチェックが残っている | 両方を外す（ループバック＋PKCE はシークレットを使わない） |
 | **初回の**トークン交換の応答に `refresh_token` が無い | scope に `refresh_token` が無い、または ECA の OAuth 範囲に「いつでも要求を実行」が無い | scope と §1 の OAuth 範囲を確認する。なお**更新時**の応答に含まれないのは正常（既定でローテーションしないため・§5 の 5） |
 | `invalid_client_id` | config.json の client_id が別 org・別 ECA のもの | 対象 org の §3 コンシューマ鍵か確認する |
+| 保管したはずのトークンが空で返る（macOS） | `-w`（値なし）へ標準入力を1回しか流していない。`passwords don't match` が出るが**終了コードは 0・項目も作られる**ので、保管できたように見える | §5 のとおり同じ値を2行送り、直後に読み戻して突き合わせる |
+| 2 つ目の組織を足したら 1 つ目が繋がらなくなった | 保管の識別に `token_account` が入っていない、または 2 つの組織に同じ `token_account` を置いたため上書きされた（macOS は `-a`、Secret Service は属性の組、ファイル保管はファイル名で 1 件を特定する） | §5 の識別の表のとおりに含め、値が組織ごとに異なることを確かめたうえで、1 つ目の組織の初回接続をやり直す |
 | 作成直後に認証が通らない | ECA が利用可能になるまで最大 30 分かかる | 待って再試行する |
 | ポート 1717 が使用中 | 他プロセス（Salesforce CLI の認証中など）が占有している | 終了を待つ。ポートを変えるなら ECA のコールバック URL も同時に変更する |
 
