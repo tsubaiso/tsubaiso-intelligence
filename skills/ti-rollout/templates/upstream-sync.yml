@@ -23,6 +23,10 @@ concurrency:
 
 env:
   UPSTREAM_URL: https://github.com/tsubaiso/tsubaiso-intelligence.git
+  # gh の操作対象をこの受け皿に固定する。差分判定のために追加するリモート名 upstream を
+  # gh は origin より優先して基準リポジトリに選ぶため、これが無いと PR を上流の公開リポジトリへ
+  # 作ろうとして Resource not accessible by integration で落ちる。権限の問題に見えるが権限ではない。
+  GH_REPO: ${{ github.repository }}
   SYNC_BRANCH: sync/upstream
   BASE_BRANCH: main
   STALE_DAYS: '7'
