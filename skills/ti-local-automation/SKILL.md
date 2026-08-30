@@ -1,8 +1,8 @@
 ---
 name: ti-local-automation
 description: 本人権限内で PSA/IMA を任意の Salesforce API（REST/Tooling/Bulk/Composite/バイナリ/独自 Apex REST）でローカル操作する能力スキル。AI がローカルでスクリプトを生成・実行し、標準 MCP ツールでは届かない操作（大容量・バイナリのファイル添付＋公開リンク発行、一括処理、Composite 等）を安全に行う。TRIGGER when 標準 MCP ツールに無い API 操作・商談等へのファイル添付＋公開リンク発行・大容量/バイナリの授受・Bulk/Composite・独自 Apex REST 呼び出しをローカルスクリプトで行う。DO NOT TRIGGER when 会話内の少量の参照・更新（標準 MCP で足りる）=標準 MCP/ti-update、業務データの一括移行の型と機構=ti-data-load、メタデータ定義の配備=ti-metadata、接続・認証の準備そのもの=ti-rollout。
-version: 0.1.3
-updated: 2026-08-19
+version: 0.2.0
+updated: 2026-08-30
 ---
 
 # ti-local-automation — ローカル API スクリプティング（任意 API 操作の機構）
@@ -34,6 +34,7 @@ updated: 2026-08-19
 | 書込前の構造ゲート・API 名・型が要る瞬間 | ti-reference `references/write-index.md` |
 | 認証・接続が未準備 | ti-rollout（本人接続の準備・api スコープ ECA） |
 | 大量の業務データ投入・移行 | ti-data-load（型と機構） |
+| **API 呼び出しのラッパ・ヘルパを書く／書き換える瞬間** | 本スキル §失敗を握りつぶさない |
 | 繰り返し詰まる摩擦／機能不足を検知 | ti-core `references/feedback.md` |
 
 ## レシピ
@@ -41,6 +42,20 @@ updated: 2026-08-19
 - **ファイル添付＋公開リンク**: 商談等へ ContentVersion をマルチパートで添付（`FirstPublishLocationId` で対象レコードへ紐付け）→ ContentDistribution で公開リンク（パスワードなし・期限指定）発行 → URL 返却。**ファイル本体は会話に載せずパス／ディスク経由**（実証済み・15MB 破損なし）。公開リンクは**パスワードなしなら URL を知る誰でもアクセス可**になるため、発行時の safety-gate 承認ドラフトに**公開範囲（URL を知る誰でも／期限）**を明記し、必要ならパスワード付き・短期限を選ぶ。
 - **ライブラリの特定フォルダへ配置**: `FirstPublishLocationId` にライブラリ（ContentWorkspace）を指定してアップロード（フォルダ ID の直指定は本番で受け付けられないことがある）→ 生成された `ContentFolderMember` の `ParentContentFolderId` を目的フォルダ（ContentFolder）へ更新して移動。パスワード付き・無期限等は ContentDistribution の `PreferencesPasswordRequired`／`PreferencesExpires` で指定（本番実証済み）。
 - （順次追加）一括更新（Bulk/upsert のうち移行に当たらない稼働後の少量〜中量）、Composite での複数レコード一括作成、独自 Apex REST 呼び出し 等。
+
+## 失敗を握りつぶさない [REQUIRED]
+
+API 呼び出しは**失敗を既定で例外にする**。エラーを戻り値へ畳んで返すヘルパを書くと、呼び出し側がそれを捨てられるようになり、**製品が返した理由を読まないまま挙動を推測する**経路ができる。
+
+| # | 何を | どう |
+|---|---|---|
+| 1 | HTTP 4xx / 5xx | 例外にする。本文（`message` / `errorCode` / `fields`）をそのまま添える |
+| 2 | invocable アクションの `isSuccess: false` | HTTP は 200 で返るので別に見る。`errors[].message` を添えて例外にする |
+| 3 | composite / Bulk の部分失敗 | 全体が 200 でも子が失敗する。1 件でも失敗したら例外にする |
+
+**呼び出し結果を受け取らない書き方をしない。** 戻り値を変数に入れずに呼ぶ、受け取って参照しない、のどちらも上の 3 つを無効化する。
+
+作成・更新が**通らなかったこと**は、製品が経路を止めた合図であり、多くの場合その理由も一緒に返っている。読まずに次のフラグを当てにいくと、原因を製品側だと解釈した誤った断定が残る。
 
 ## 顧客レシピの作成・配布（標準/顧客固有の2層）
 

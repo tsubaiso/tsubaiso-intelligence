@@ -54,6 +54,7 @@ PSA/IMA を使う顧客 org へ、**初期・移行・稼働後を問わず一�
 | **投入・移行が一段落した瞬間（指示を待たない・完了条件）** | `references/import-errors.md §投入後の答え合わせ（3層・完了条件）` | L1 管理会計→L2 伝票の最終形→L3 構造・経路の順で降りた結果・⚠️ の手順への帰属 |
 | 隣接スキルとの境界を判定する・着手前ゲートの型索引を引く | `references/boundaries-and-gates.md` | 局面（一括投入 vs 日常少量）・型索引ファセット・委譲先 |
 | create/insert/import の**書込直前**の構造ゲート（作れない工程の検出・参照先の有効条件） | ti-reference の書込前ゲート（`ti-reference references/write-index.md`） | 対象API名・auto_create シーム・参照先の有効性（判定 ❌/⚠️/✅ に従う） |
+| **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | `ti-core references/knowledge-lookup.md` | 引きたい製品・機能と、利用者の言い方 |
 | org へデータを書き込む直前（投入・自動作成 touch・upsert・前提 seed） | `ti-core references/safety-gate.md` | 投入対象・件数・承認ドラフト・PIIマスキング |
 | 投入手順をユーザーと往復で詰める瞬間（対象オブジェクト・キー項目・投入順の確認） | `ti-core references/spec-roundtrip.md` | 投入計画（オブジェクト順・キー項目・型判定の前提） |
 | 同じ箇所で繰り返し失敗・つまずく摩擦／意味定義・サーバーAPIの不足を検知した瞬間 | `ti-core references/feedback.md` | 匿名化した摩擦シグナル・不足の内容 |

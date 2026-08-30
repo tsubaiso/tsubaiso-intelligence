@@ -63,6 +63,7 @@ PSA/IMA を使う顧客の**稼働後のデータ更新全般**を支援する**
 | 承認前チェックの集計・類似取引を引く | ti-reference のレシピ（Atlas MCP 配信） | 利益率・過去取引の引き当て軸 |
 | 現状仕様を往復で詰める瞬間（突合結果の提示・点検助言の往復・承認の許可の往復） | ti-core `references/spec-roundtrip.md` | 差分・選択肢・前提 |
 | 依頼された操作の実行経路が使えるか確かめる瞬間（権限・接続で止まった／組織で初めて行う） | ti-core `references/capability-preflight.md` | 依頼の内容・不足している器 |
+| **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md` | 引きたい製品・機能と、利用者の言い方 |
 | org へ書き込む直前（作成・トリガ項目更新・マスタ書込） | ti-core `references/safety-gate.md` | 対象・承認ドラフト・PIIマスキング |
 | 段階拡張の穴・サーバーAPI未開放・意味定義の不足に気づいた瞬間 | ti-core `references/feedback.md` | 不足の内容 |
 | 一次解決で解けず利用者が未解決のまま／繰り返し詰まると判定した瞬間 | ti-core `references/support-escalation.md` | 本人の許可・再現手順（PII・業務データ本体・認証情報は載せない） |

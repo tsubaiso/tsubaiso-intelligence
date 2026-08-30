@@ -1,8 +1,8 @@
 ---
 name: ti-report
 description: 【ベータ】PSA/IMA顧客の帳票（見積・請求・注文・納品・検収 等）を自社レイアウト・項目へカスタマイズする能力スキル。TRIGGER when 帳票テンプレの新規作成・調整、データの流し込み、押印/DRAFT分岐の組み込み、帳票に出す項目の追加、帳票出力ボタン/描画面のorg配置、帳票の美観仕上げ、帳票項目マッピング設計書・カスタマイズ仕様書の出力と継続修正サイクル。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、文書→レコードの取込・入力支援は ti-update、導入プロジェクトの工程進行は ti-onboarding。
-version: 0.2.1
-updated: 2026-08-19
+version: 0.3.0
+updated: 2026-08-29
 ---
 
 # ti-report — 帳票カスタマイズ
@@ -34,6 +34,7 @@ PSA/IMA を使う顧客の帳票を、自社のレイアウト・項目に合わ
 | 帳票を作った後に設計書を出す・カスタマイズ仕様書を提示する・指示を反映して回す | `references/report-design-cycle.md` | 対象帳票の版・現状マッピング・変更指示 |
 | 帳票の体裁・美観を仕上げる・日本向け/海外向けの様式を選ぶ | `references/report-aesthetics.md` | 対象国・帳票種別・出力経路（画面印刷/サーバPDF） |
 | 現状仕様を往復で詰める瞬間（設計書→仕様書→指示→反映の往復） | ti-core `references/spec-roundtrip.md` | 変更の選択肢・前提 |
+| **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md` | 引きたい製品・機能と、利用者の言い方 |
 | org へ書き込む直前（項目追加・デプロイ・生成PDFの添付） | ti-core `references/safety-gate.md` | 対象・承認ドラフト |
 | 帳票機構の不足・ナレッジギャップに気づいた瞬間 | ti-core `references/feedback.md` | 不足の内容 |
 | 一次解決で解けず利用者が未解決のまま／繰り返し詰まると判定した瞬間 | ti-core `references/support-escalation.md` | 本人の許可・再現手順（PII・業務データ本体・認証情報は載せない） |
