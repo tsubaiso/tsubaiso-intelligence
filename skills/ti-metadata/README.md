@@ -1,6 +1,6 @@
 # ti-metadata — メタデータ設定スキル
 
-PSA/IMA（Salesforce マネージドパッケージ）のカスタマイズ（メタデータ編集）を、AI が PSA/IMA の現状と整合性を保って設定するためのスキルです。実組織の現状を真実の源にした **差分方式（retrieve → author → diff → checkonly → deploy → verify）** を中核に、カスタム項目・権限セット・入力規則・承認プロセス・FlexiPage（作成＋割当）・レポートタイプ・リストビュー・Apex トリガー・Flow オーバーライド・Lightning Web コンポーネント・静的リソース・Visualforce ページ・非トリガ Apex クラス・カスタムメタデータ・共有ルール（SharingRules）／OWD までを、実機検証で確定した手順として収録しています。
+PSA/IMA（Salesforce マネージドパッケージ）のカスタマイズ（メタデータ編集）を、AI が PSA/IMA の現状と整合性を保って設定するためのスキルです。実組織の現状を真実の源にした **差分方式（retrieve → author → diff → checkonly → deploy → verify）** を中核に、カスタム項目・権限セット・入力規則・承認プロセス・FlexiPage（作成＋割当）・レポートタイプ・リストビュー・Apex トリガー・Flow オーバーライド・Lightning Web コンポーネント・静的リソース・Visualforce ページ・非トリガ Apex クラス・カスタムメタデータ・共有ルール（SharingRules）／OWD・ラベルと選択リスト値の翻訳までを、実機検証で確定した手順として収録しています。
 
 このスキルは特定のプラグインやロールパックに依存しません。`sf CLI v2`＋`Python 3`＋認証済み org があれば単体で機能します。
 
@@ -9,7 +9,7 @@ PSA/IMA（Salesforce マネージドパッケージ）のカスタマイズ（�
 | ファイル | 役割 |
 |---|---|
 | `SKILL.md` | スキル本体。org カテゴリと安全弁・カスタマイズ着手プリフライト・疎結合設計原則・アップグレード再検証・中核ループ・PSA/IMA 整合ルール |
-| `references/metadata-type-recipes.md` | 種別ごとのオーサリング手順と確定した癖（12 節） |
+| `references/metadata-type-recipes.md` | 種別ごとのオーサリング手順と確定した癖（13 節） |
 | `references/sharing-model.md` | 共有モデル設定（SharingRules／OWD）＝アドバイザリー専用・衝突検知つき追記 |
 | `scripts/tb_mdconfig.py` | 中核ループ（retrieve/diff/checkonly/quick deploy/deploy/verify）を sf CLI v2 上でラップするハーネス。本番＝承認ゲート、検証 org＝確認ゲート内蔵 |
 | `scripts/tb_sharing.py` | 共有モデル設定の author 段（CSV→SharingRules XML 生成・可読ルール翻訳・衝突プリチェック）。org には書かない |

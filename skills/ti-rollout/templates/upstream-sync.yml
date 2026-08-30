@@ -1,15 +1,19 @@
 # 配布用の受け皿（顧客の private 複製リポジトリ）に .github/workflows/upstream-sync.yml として置く。
-# 役割は 2 つ。
-#   (1) 上流（ツバイソの公開リポジトリ）に新しい版が出たら追従 PR を立てる
-#   (2) その PR が一定日数マージされないまま滞留していたら PR にコメントで知らせる
+# 役割は 3 つ。
+#   (1) 上流（ツバイソの公開リポジトリ）に新しい版が出たら取り込む
+#   (2) AUTO_MERGE=false のとき、または競合したときは追従 PR を立てて人の判断を待つ
+#   (3) その PR が一定日数マージされないまま滞留していたら PR にコメントで知らせる
 # 置いたあとリポジトリの Settings > Actions > General > Workflow permissions で
 # 「Allow GitHub Actions to create and approve pull requests」を有効にすること。
 name: Tsubaiso Intelligence の追従
 
 on:
   schedule:
-    # 毎日 09:00 JST（= 00:00 UTC）
-    - cron: '0 0 * * *'
+    # 毎日 1 回（00:23 UTC = 09:23 JST）。時刻は保証されない。
+    # GitHub の scheduled は混雑時に遅れる（当社の受け皿で約 5 時間の遅れと、
+    # 当日発火しなかった日を実測）。毎時 00 分はもっとも混む枠なので分をずらしている。
+    # 新しい版を今すぐ反映したいときは Actions の「Run workflow」で手動実行する。
+    - cron: '23 0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +34,13 @@ env:
   SYNC_BRANCH: sync/upstream
   BASE_BRANCH: main
   STALE_DAYS: '7'
+  # 上流の更新を自動で反映するか。
+  #   'true'（既定）= 競合しなければ自動で反映して配る。管理者の手作業が要らない。
+  #                   配る判断は「上流を信頼する」という一度の決定に置き換わる。
+  #   'false'       = 追従 PR を立てて、配る版を毎回管理者が決める。
+  # 'true' でも競合したときと push が拒まれたときは PR 経路へ落ちるので、
+  # 気づかないまま壊れた状態が配られることはない。
+  AUTO_MERGE: 'true'
 
 jobs:
   sync:
@@ -59,18 +70,48 @@ jobs:
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: 自動で反映する（AUTO_MERGE=true・競合しなければ）
+        id: auto
+        if: steps.check.outputs.changed == 'true' && env.AUTO_MERGE == 'true'
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          git config user.name "tsubaiso-upstream-sync"
+          git config user.email "dev@tsubaiso.jp"
+          # 競合したら中断して PR 経路へ落とす。中断せずに残すと、以後のステップが
+          # 競合マーカーの入った作業ツリーで動くことになる。
+          if ! git merge --no-edit upstream/main; then
+            echo "競合しました。追従 PR を立てて人の判断に回します。"
+            git merge --abort || true
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # push が拒まれる典型はブランチ保護。ここで失敗しても止めず PR 経路へ落とす。
+          if ! git push origin "HEAD:refs/heads/${BASE_BRANCH}"; then
+            echo "push が拒まれました（ブランチ保護などの可能性）。追従 PR を立てて人の判断に回します。"
+            git reset --hard "origin/${BASE_BRANCH}"
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "上流の版 v${VERSION} を ${BASE_BRANCH} へ反映しました。マーケットプレイスの同期が発火します。"
+          echo "merged=true" >> "$GITHUB_OUTPUT"
+
       - name: 追従ブランチを更新
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.changed == 'true' && steps.auto.outputs.merged != 'true'
         run: git push --force origin "upstream/main:refs/heads/${SYNC_BRANCH}"
 
-      - name: 追従 PR を作成（既にあればブランチ更新のみ）
-        if: steps.check.outputs.changed == 'true'
+      - name: 追従 PR を作成（既にあればタイトルを版に追随させる）
+        if: steps.check.outputs.changed == 'true' && steps.auto.outputs.merged != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.check.outputs.version }}
         run: |
-          if [ -n "$(gh pr list --head "$SYNC_BRANCH" --state open --json number -q '.[0].number')" ]; then
-            echo "既存の追従 PR があります。ブランチを更新して終了します。"
+          EXISTING=$(gh pr list --head "$SYNC_BRANCH" --state open --json number -q '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            # 既存 PR は使い回されるため、タイトルを更新しないと立てた時点の版が残り続ける。
+            # 中身は最新なのにタイトルが古いという状態は、管理者が「もう見た PR」と読み飛ばす原因になる。
+            echo "既存の追従 PR #${EXISTING} があります。ブランチを更新し、タイトルを v${VERSION} へ揃えて終了します。"
+            gh pr edit "$EXISTING" --title "Tsubaiso Intelligence Skill v${VERSION} に追従"
             exit 0
           fi
           {
