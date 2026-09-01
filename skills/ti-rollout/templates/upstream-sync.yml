@@ -1,8 +1,11 @@
 # 配布用の受け皿（顧客の private 複製リポジトリ）に .github/workflows/upstream-sync.yml として置く。
 # 役割は 3 つ。
-#   (1) 上流（ツバイソの公開リポジトリ）に新しい版が出たら取り込む
-#   (2) AUTO_MERGE=false のとき、または競合したときは追従 PR を立てて人の判断を待つ
-#   (3) その PR が一定日数マージされないまま滞留していたら PR にコメントで知らせる
+#   (1) 上流（ツバイソの公開リポジトリ）に新しい版が出たら追従 PR を立てる
+#   (2) AUTO_MERGE=true（既定）のとき、その PR を自動でマージする
+#   (3) マージできないまま滞留していたら PR にコメントで知らせる
+# 反映は必ず PR のマージで行う。組織マーケットプレイスの自動同期が
+# 「版上げを含む PR が既定ブランチへマージされたとき」にしか発火せず、
+# 既定ブランチへの直接 push では発火しないため。
 # 置いたあとリポジトリの Settings > Actions > General > Workflow permissions で
 # 「Allow GitHub Actions to create and approve pull requests」を有効にすること。
 name: Tsubaiso Intelligence の追従
@@ -33,13 +36,16 @@ env:
   GH_REPO: ${{ github.repository }}
   SYNC_BRANCH: sync/upstream
   BASE_BRANCH: main
+  # 追従 PR がこの日数マージされないまま滞留したら PR にコメントで知らせる。
   STALE_DAYS: '7'
-  # 上流の更新を自動で反映するか。
-  #   'true'（既定）= 競合しなければ自動で反映して配る。管理者の手作業が要らない。
+  # 一度知らせたあと、次に知らせるまでの間隔（日）。滞留のしきい値とは別に調整できる。
+  RENOTIFY_DAYS: '7'
+  # 追従 PR を自動でマージするか。
+  #   'true'（既定）= 立てた PR をそのままマージして配る。管理者の手作業が要らない。
   #                   配る判断は「上流を信頼する」という一度の決定に置き換わる。
-  #   'false'       = 追従 PR を立てて、配る版を毎回管理者が決める。
-  # 'true' でも競合したときと push が拒まれたときは PR 経路へ落ちるので、
-  # 気づかないまま壊れた状態が配られることはない。
+  #   'false'       = PR を立てるところまでにして、配る版を毎回管理者が決める。
+  # 'true' でもマージできないとき（競合・ブランチ保護のレビュー必須など）は
+  # PR が open のまま残るので、気づかないまま壊れた状態が配られることはない。
   AUTO_MERGE: 'true'
 
 jobs:
@@ -70,38 +76,13 @@ jobs:
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 自動で反映する（AUTO_MERGE=true・競合しなければ）
-        id: auto
-        if: steps.check.outputs.changed == 'true' && env.AUTO_MERGE == 'true'
-        env:
-          VERSION: ${{ steps.check.outputs.version }}
-        run: |
-          git config user.name "tsubaiso-upstream-sync"
-          git config user.email "dev@tsubaiso.jp"
-          # 競合したら中断して PR 経路へ落とす。中断せずに残すと、以後のステップが
-          # 競合マーカーの入った作業ツリーで動くことになる。
-          if ! git merge --no-edit upstream/main; then
-            echo "競合しました。追従 PR を立てて人の判断に回します。"
-            git merge --abort || true
-            echo "merged=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # push が拒まれる典型はブランチ保護。ここで失敗しても止めず PR 経路へ落とす。
-          if ! git push origin "HEAD:refs/heads/${BASE_BRANCH}"; then
-            echo "push が拒まれました（ブランチ保護などの可能性）。追従 PR を立てて人の判断に回します。"
-            git reset --hard "origin/${BASE_BRANCH}"
-            echo "merged=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "上流の版 v${VERSION} を ${BASE_BRANCH} へ反映しました。マーケットプレイスの同期が発火します。"
-          echo "merged=true" >> "$GITHUB_OUTPUT"
-
       - name: 追従ブランチを更新
-        if: steps.check.outputs.changed == 'true' && steps.auto.outputs.merged != 'true'
+        if: steps.check.outputs.changed == 'true'
         run: git push --force origin "upstream/main:refs/heads/${SYNC_BRANCH}"
 
       - name: 追従 PR を作成（既にあればタイトルを版に追随させる）
-        if: steps.check.outputs.changed == 'true' && steps.auto.outputs.merged != 'true'
+        id: pr
+        if: steps.check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.check.outputs.version }}
@@ -110,8 +91,9 @@ jobs:
           if [ -n "$EXISTING" ]; then
             # 既存 PR は使い回されるため、タイトルを更新しないと立てた時点の版が残り続ける。
             # 中身は最新なのにタイトルが古いという状態は、管理者が「もう見た PR」と読み飛ばす原因になる。
-            echo "既存の追従 PR #${EXISTING} があります。ブランチを更新し、タイトルを v${VERSION} へ揃えて終了します。"
+            echo "既存の追従 PR #${EXISTING} があります。ブランチを更新し、タイトルを v${VERSION} へ揃えます。"
             gh pr edit "$EXISTING" --title "Tsubaiso Intelligence Skill v${VERSION} に追従"
+            echo "number=${EXISTING}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           {
@@ -126,6 +108,24 @@ jobs:
             --head "$SYNC_BRANCH" \
             --title "Tsubaiso Intelligence Skill v${VERSION} に追従" \
             --body-file "${RUNNER_TEMP}/pr-body.md"
+          NUMBER=$(gh pr list --head "$SYNC_BRANCH" --state open --json number -q '.[0].number')
+          echo "number=${NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: 追従 PR をマージする（AUTO_MERGE=true）
+        if: steps.check.outputs.changed == 'true' && env.AUTO_MERGE == 'true' && steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ steps.pr.outputs.number }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          # マージできない理由（競合・レビュー必須のブランチ保護・必須チェックの失敗）は
+          # いずれも人の判断が要るものなので、失敗しても止めず PR を open のまま残す。
+          # 次回の実行と滞留通知がそのまま拾う。
+          if gh pr merge "$NUMBER" --merge; then
+            echo "追従 PR #${NUMBER}（v${VERSION}）をマージしました。組織マーケットプレイスの同期が発火します。"
+          else
+            echo "追従 PR #${NUMBER} をマージできませんでした。open のまま残し、管理者の判断に回します。"
+          fi
 
       - name: 未マージのまま滞留していたら知らせる
         env:
@@ -146,8 +146,8 @@ jobs:
           LAST=$(gh pr view "$NUMBER" --json comments --jq '[.comments[] | select(.body | contains("<!-- upstream-sync-stale -->")) | .createdAt] | last // empty')
           if [ -n "$LAST" ]; then
             SINCE=$(( ( $(date -u +%s) - $(date -u -d "$LAST" +%s) ) / 86400 ))
-            if [ "$SINCE" -lt "$STALE_DAYS" ]; then
-              echo "${SINCE} 日前に知らせ済みです。"
+            if [ "$SINCE" -lt "$RENOTIFY_DAYS" ]; then
+              echo "${SINCE} 日前に知らせ済みです（再通知の間隔 ${RENOTIFY_DAYS} 日）。"
               exit 0
             fi
           fi
@@ -158,5 +158,7 @@ jobs:
             echo "マージされるまで、利用者の手元には新しい版が届きません。利用者からは「できるはずのことができない」という形でしか気づけないため、放置すると原因の分からない不具合として現れます。"
             echo ""
             echo "配る判断はこのリポジトリの管理者にあります。内容を確認してマージするか、見送る場合はその理由をコメントに残してください。"
+            echo ""
+            echo "**見送る場合も、この PR は open のまま残してください。** close すると次回の実行で同じ PR が作り直され、以後そのたびに新しい PR が立ちます。"
           } > "${RUNNER_TEMP}/stale.md"
           gh pr comment "$NUMBER" --body-file "${RUNNER_TEMP}/stale.md"
