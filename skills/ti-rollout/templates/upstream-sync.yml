@@ -89,11 +89,15 @@ jobs:
         run: |
           EXISTING=$(gh pr list --head "$SYNC_BRANCH" --state open --json number -q '.[0].number')
           if [ -n "$EXISTING" ]; then
+            echo "既存の追従 PR #${EXISTING} があります。ブランチを更新し、タイトルを v${VERSION} へ揃えます。"
+            # 先に番号を出力してからタイトルを更新する。順序が逆だと、タイトル更新が
+            # 一時エラーで落ちたときに番号が出力されず、その回のマージまで飛ぶ。
+            echo "number=${EXISTING}" >> "$GITHUB_OUTPUT"
             # 既存 PR は使い回されるため、タイトルを更新しないと立てた時点の版が残り続ける。
             # 中身は最新なのにタイトルが古いという状態は、管理者が「もう見た PR」と読み飛ばす原因になる。
-            echo "既存の追従 PR #${EXISTING} があります。ブランチを更新し、タイトルを v${VERSION} へ揃えます。"
-            gh pr edit "$EXISTING" --title "Tsubaiso Intelligence Skill v${VERSION} に追従"
-            echo "number=${EXISTING}" >> "$GITHUB_OUTPUT"
+            # ただしタイトルは表示の問題なので、失敗しても配ることを止めない。
+            gh pr edit "$EXISTING" --title "Tsubaiso Intelligence Skill v${VERSION} に追従" \
+              || echo "タイトルの更新に失敗しました。マージは続けます。"
             exit 0
           fi
           {
