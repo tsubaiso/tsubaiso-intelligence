@@ -1,6 +1,6 @@
 ---
 title: ti-core — フィードバック／ナレッジギャップ（feedback）
-updated: 2026-06-25
+updated: 2026-09-01
 ---
 
 # フィードバック／ナレッジギャップ（feedback）
