@@ -1,0 +1,48 @@
+# firing_points.yml — 規約が定めた先行手順の宣言
+#
+# 読むのは scripts/check_firing.py。書き方の規約は同スキルの
+# references/firing-observation.md §宣言の書き方 が正本。
+#
+# 宣言できるのは「トリガ事象 → 先行必須事象」の形だけ。
+# トリガは痕跡に残るもの（ツール呼出し・応答本文）に限る。
+# 「〜する瞬間」「〜を検討するとき」は痕跡を残さないので宣言できない。
+#
+# severity: violation = 不発を終了コード 1 に反映する
+#           advisory  = 列挙するだけ（偽陽性が避けられない判定に使う）
+
+- id: write_seam_before_record_write
+  severity: violation
+  lane: [pre, post]
+  trigger:
+    tool: ["createSobjectRecord$", "updateSobjectRecord$", "sf_create_record$", "sf_update_record$"]
+  requires:
+    tool: "atlas_write_seam$"
+    scope: session
+    same_object: true
+  message: "レコードの作成・更新の前に atlas_write_seam(target=<対象>) を引く"
+  owner: "ti-reference/references/write-index.md"
+  note: "対象の照合は名前空間を剥がして行う。target は短縮形と名前空間つきが混在する（2026-09-14 実測で 34 対 42）"
+
+- id: safety_gate_before_metadata_deploy
+  severity: violation
+  lane: [pre, post]
+  trigger:
+    tool: ["deploy_metadata$"]
+  requires:
+    read_path: "safety-gate"
+    scope: session
+  message: "org へメタデータを書き込む前に ti-core/references/safety-gate.md を読む"
+  owner: "ti-core/references/safety-gate.md"
+
+- id: knowledge_lookup_before_capability_claim
+  severity: advisory
+  lane: [post]
+  trigger:
+    text_all: ["(PSA|IMA|ツバイソ)", "(できません|対応していません|仕様です|標準機能では)"]
+  requires:
+    tool: "(isoppy_search$|isoppy_get_article$|atlas_explain$)"
+    scope: session
+  message: "製品の可否・仕様を断定する前にナレッジを引く"
+  owner: "ti-core/references/knowledge-lookup.md"
+  note: "トリガが応答本文なので post でしか成立しない（本文は送出前に存在しない）。文面の判定は偽陽性を避けられないので advisory に置き、終了コードへ反映しない"
+  note2: "初版は可否語だけを見て母数 1953 になり壁紙化した。製品名との共起を必須にし、肯定側（できます・対応しています）は日常語と切れないので外した（config-governance §統制は陽性ケースで発火することを実測する 原則6）"
