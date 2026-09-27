@@ -1,8 +1,8 @@
 ---
 name: ti-metadata
 description: AI が PSA/IMA と整合してメタデータ＝カスタマイズ（カスタム項目・権限セット・入力規則・承認プロセス・FlexiPage・レポートタイプ・リストビュー・Apexトリガー・Flow オーバーライド・Lightning Web コンポーネント・静的リソース・Visualforce ページ・非トリガ Apex クラス・カスタムメタデータ・共有ルール(SharingRules)/OWD＝共有モデル設定・ラベル/選択リスト値の翻訳 等）を差分方式で設定する手順とスクリプト。着手前の競合・リスク診断プリフライト（6軸ルーブリック）・疎結合設計原則（P1〜P8）・アップグレード再検証・カスタマイズ設計書／仕様書の出力サイクルを内蔵
-version: 3.10.0
-updated: 2026-09-10
+version: 3.11.0
+updated: 2026-09-26
 ---
 
 # ti-metadata — メタデータ設定スキル（PSA/IMA 整合カスタマイズ）
@@ -31,7 +31,7 @@ PSA/IMA（Salesforce マネージドパッケージ）のカスタマイズ（�
 | 4 | カスタムオブジェクト | `CustomObject` | 項目と同型 | 低〜中 |
 | 5 | 承認プロセス（＋最終承認アクション） | `ApprovalProcess` / `WorkflowFieldUpdate` | **実証済** | 低〜中（active=true 配備可） |
 | 6 | Lightning Page（record page）＋割当 | `FlexiPage` / `CustomApplication`（actionOverrides / profileActionOverrides） | **実証済**（作成／App単位割当／プロファイル単位割当） | 中（作成可・**割当はApp単位／プロファイル単位で可／org-defaultは管理オブジェクト不可**） |
-| 7 | レポートタイプ／リストビュー／レポート（**説明文の型は `references/report-description.md`**） | `ReportType` / `ListView` / `Report` | **実証済**（Report本体は標準RTのみ可） | 中 |
+| 7 | レポートタイプ／リストビュー／レポート（**説明文の型は `references/report-description.md`**） | `ReportType` / `ListView` / `Report` | **実証済**（Report本体はカスタムレポートタイプ参照も可・参照名に `__c` が要る） | 中 |
 | 8 | Apex トリガー | `ApexTrigger`（＋テストクラス） | **実証済** | 高（テストカバレッジ要件・quick deploy 可） |
 | 9 | Flow（`isOverridable` オーバーライド） | `Flow` / `FlowDefinition` | **実証済** | 高（**置換型・全置換**。全置換ドリフトは本番展開ブロッカー＝§安全弁7） |
 | 10 | Lightning Web コンポーネント | `LightningComponentBundle` | **実証済** | 中（`isExposed`＋`lightning__RecordPage`＋`targetConfigs objects`で管理対象レコードページ配置可・可視化はFlexiPage割当ゲート） |
@@ -73,6 +73,7 @@ PSA/IMA（Salesforce マネージドパッケージ）のカスタマイズ（�
 ### 手順
 
 0. **対象がパッケージ側のものだったとき、迂回策を考える前に `references/metadata-type-recipes.md §PSA/IMAのコンポーネントへ、購読側からできること` を見る [REQUIRED]。** 「パッケージが提供しているものだから変えられない」で迂回すると、購読側から手を入れられる範囲を使い残したまま、重い代替設計に進むことになる。逆に、足せても後から消せない型があるので、可否と取り消し可否をここで対にして確かめる。
+   **顧客の「分類」「区分」「カテゴリ」「階層」を写す要件も同じ扱いにする。** カスタム項目を作る前に、製品が持つ集計軸（セグメントマスタの種別と階層・部門・勘定科目など）に載るかを意味定義で確かめる。PSAは、案件・受注などの見出しにセグメント種別1〜3を、受注明細などの明細に商品・サービスセグメント1〜3を持ち、管理会計も同じ6項目を持つ。軸に載せれば、その値で標準のレポートや管理会計をそのまま切れる。**カスタム項目で持った分類はこれらの項目に乗らず、顧客ごとの追加がそのぶん増える。** 載らない理由（階層の数・粒度・種別が合わない）を書けたときに初めてカスタム項目にする。見分けるサイン: 要件に分類・階層の語があるのに、設計案が `__c` の新規追加だけでできている。
 1. 対象を確定する（オブジェクト・項目・メタデータ種別・変更の中身）。
 2. 下記 **6 軸ルーブリック**で評価する。機械で確定できる軸は describe／retrieve で事実を取り（中核ループの「現状を真実の源に」を着手前へ前倒し）、意味判定が要る軸は依頼者（管理者）へ確認する。
 3. **リスクレベルとゲート**を決める。中・高リスクなら §疎結合設計原則 に照らして代替案を用意し、そちらを既定案にする。
@@ -145,13 +146,17 @@ PSA/IMA のバージョンアップ後は、既存カスタマイズの回帰を
      ```
    - **quick deploy（`sf project deploy quick --job-id`）はテストを実行した検証ジョブにしか使えない**。Apex 無しの checkonly はテスト 0 件で `CannotQuickDeployError`（`Source validate did not run tests`）になる。**Apex（トリガ＋テスト）を `--test-level RunSpecifiedTests` で検証したジョブは quick deploy が成立する**＝quick はテストを再実行せず（`numberTestsCompleted=0` で実証）、本番投入時のテスト二重実行を避けられる。Apex を含まない種別は quick 不可で通常 deploy になる。
    - **CLI finalize メッセージ欠落バグ（必ず job-id で実ステータス確認）**: sf CLI 2.93.7 は deploy 完了直前に `MetadataTransferError: Missing message metadata.transfer:Finalizing for locale en_US.` を投げて exit 1 になることがある。**これは finalize 工程のローカライズメッセージ欠落による表示バグで、サーバー側のデプロイは成功している**。exit 1 を即「失敗」と判定せず、エラー JSON の `data.id` の job-id で `sf project deploy report --job-id <id> --target-org <org> --json` を実行し `status`/`numberComponentErrors` で実判定する。
+   - **成否は全体の `status` で判定する。** 配備は既定で1回ごとにひとまとまりで、1件でも失敗すると、結果に「OK」と表示されたコンポーネントを含む全件が巻き戻る。**`componentSuccesses` の「OK」の行は「その1件の処理が通った」という意味で、組織に残ったことを意味しない。** 失敗のあとは結果を読み直さず、`sf org list metadata` か `describe` で組織側の実在を確かめてから次の手を決める（残ったつもりの部品を前提に再配備すると、同じエラーで落ち続ける）。失敗した部品だけを飛ばして残りを入れるオプション（`--ignore-errors`）は、本番では使わない。
 6. **verify（突合）**: **別ディレクトリ**へ再 retrieve し目標と差分 0 を確認（force-app を上書きしない）。または SOQL で実在確認する。
    - **`FieldDefinition`（Tooling）は作成直後の項目を返さないことがある**。項目の実在は **`CustomField`（Tooling, `TableEnumOrId`/`DeveloperName`）** か **`FieldPermissions`** で確認する。VR は `ValidationRule`（Tooling, `Active`）、権限セット FLS は `FieldPermissions` で確認。
+   - **値を返す種別（レポート）は、実行して総計を確かめるまでが突合。** 配備の成功は構文と参照の正しさしか示さない。書かなかった設定が既定値で埋まり、配備は通るのに実行すると0件になる形がある（`references/metadata-type-recipes.md §リストビュー（ListView）／レポート本体（Report）`）。
+   - **利用者が画面で見る種別（レポート・リストビュー・FlexiPage・帳票）は、利用者が開く経路で開き、初期表示を見るまでを突合に含める。** 値の突合で見つかるのは値の誤りだけで、見え方の誤り（開いた直後の画面・並び順・スクロール量・金額0の行の混入）は見つからない。デモや検証の当日に初めて開く形にしない。見る観点の例は同じ節にある。
 
 7. **記録（設計書・仕様書の出力）[REQUIRED]**: 配備が成功したら、加えたカスタマイズの**設計書**（何を・どこに・なぜ加えたか）と**仕様書**（どこをどう変えられるか）を出力する。**カスタマイズを1件加える／変更するたびに出す**（`references/customization-design-doc.md`）。あわせて意味付けの記録ペイロード（対象・意図・author・確信度）を ti-spec-view の記録プロトコルへ渡す（意味付けの蓄積は同スキルが持つ＝二重ホームにしない）。**これを省くと、AI が加えたカスタマイズがそのままブラックボックスになる。**
+   **発火点は操作に紐づける [REQUIRED]。** 「中核ループを回している」という自覚を前提にしない。実際の作業は「フローを直す」「レポートを作る」という業務側の目的で始まり、手順番号を意識しないまま `sf project deploy start` を打つことが多いからである。**`sf project deploy start` を打った直後、または組織のメタデータを1件でも変えたと分かった瞬間**に本手順へ入る。作業の経緯の記録（計画・タスク表など）へ書いたことは設計書の代わりにならない（置き場と区切りでの点検は `references/customization-design-doc.md`）。
    **配備を伴わない経路にも及ぶ [REQUIRED]**。本手順の出力トリガは手順6の直後に置いているが、**AI が配備しないカスタマイズも記録の対象**である。共有モデル設定（§安全弁8＝アドバイザリー専用でデプロイは利用者側）のように AI の手が配備まで届かない種別でも、設計として確定した内容は同じ形で出力する（`references/customization-design-doc.md` の射程は共有ルール／OWD を含む）。**起点は「配備が成功したこと」ではなく「加えるカスタマイズの内容が確定したこと」**で、配備の事実の欄は利用者側が適用した時点で埋める。ti-spec-view へ渡す記録ペイロードだけは配備の確認後に渡す（未適用のものを org の現状として蓄積しない）。
 
-デプロイ順序（依存解決）: カスタムオブジェクト／項目／入力規則 → 権限セット → Apex → Flow(Draft) → Flow 有効化。順序違反は FLS・参照エラーの主因。**VR が数式で参照する項目は同一 deploy 単位に同梱する**（`INVALID_CROSS_REFERENCE_KEY` 回避）。**カスタム項目は権限セット（または現在プロファイル）に FLS を入れないと誰にも見えない**ため、項目と権限セットを同梱する。
+デプロイ順序（依存解決）: カスタムオブジェクト／項目／入力規則 → 権限セット → Apex → Flow(Draft) → Flow 有効化。順序違反は FLS・参照エラーの主因。**参照される側を別の回で先に通す段階配備にすると、失敗の切り分けがつく**（レポートタイプ → レポート、項目 → レイアウト）。1回にまとめると、参照する側の失敗で参照される側まで巻き戻る（手順5）。**VR が数式で参照する項目は同一 deploy 単位に同梱する**（`INVALID_CROSS_REFERENCE_KEY` 回避）。**カスタム項目は権限セット（または現在プロファイル）に FLS を入れないと誰にも見えない**ため、項目と権限セットを同梱する。
 
 ## PSA/IMA 整合ルール [REQUIRED]
 
@@ -183,7 +188,7 @@ PSA/IMA のバージョンアップ後は、既存カスタマイズの回帰を
 | ファイル | 内容 |
 |---|---|
 | `references/metadata-type-recipes.md` | 種別ごとのオーサリング手順と確定した癖（対象メタデータ 14 型のうちカスタムオブジェクトはカスタム項目と同型のため節を持たない）＋**PSA/IMAのコンポーネントへ購読側からできること**（ラベル・項目セット・レコードタイプ・同梱接続設定）＋**集計に載らない金額を載せる3層の切り分け**（前提スイッチ／マスタの予備枠／源泉の追加）＋**使わなくなった項目を廃止する**（消さずに見えなくする段階A／参照を切る段階B・自分の項目と提供元の項目で打てる手が変わる） |
-| `references/report-description.md` | レポートの説明文（description）の型＝5要素と優先順位・**開き方は例外がないときも1文書く**・255文字上限での落とし方・レポート定義から機械的に取る場所・説明文の不備を検知する3パターン |
+| `references/report-description.md` | レポートの説明文（description）の型＝7要素と優先順位（表示範囲・結合・表形式の書き分けを含む）・**開き方は例外がないときも1文書く**・255文字上限での落とし方・レポート定義から機械的に取る場所・説明文の不備を検知するパターン |
 | `references/sharing-model.md` | 共有モデル設定（SharingRules／OWD）＝アドバイザリー専用・衝突検知つき追記 |
 | `references/customization-design-doc.md` | カスタマイズ設計書（現状の可視化）・カスタマイズ仕様書（指示記入式）の出力フォーマットと継続修正サイクル（カスタマイズのブラックボックス化解消） |
 
@@ -200,14 +205,13 @@ PSA/IMA のバージョンアップ後は、既存カスタマイズの回帰を
 
 ## 実証済みの型（一覧）
 
-カスタム項目・権限セット・入力規則／承認プロセス／FlexiPage 作成／レポートタイプ／Apex トリガー＋テスト／FlexiPage の App 単位割当／リストビュー＋ReportFolder＋Report 本体〔標準レポートタイプのみ〕／FlexiPage のプロファイル単位割当＋既存 unmanaged アプリ上書き境界／Flow オーバーライド〔`isOverridable`・置換型・全置換〕／LWC＋StaticResource〔管理対象レコードページ配置・`$Resource` 参照・`@AuraEnabled` 業務 Apex 配備〕／Visualforce ページ（描画面VF）＋非トリガ Apex クラス〔VF カスタムコントローラ・quick deploy〕／カスタムメタデータ〔型＋レコード・型→レコード 2 段配備・`xmlns:xsd` 宣言必須・レコードはメタデータ API 配備のみ〕／共有ルール〔`SharingRules` 2 型＝所有者ベース／条件ベース・**衝突検知つき追記**（owner rule は (sharedFrom,sharedTo) で一意化＝衝突追記が既存 access を silent 縮小しうる／criteria rule は (sharedTo,field,value) で一意化されず並存＝実効UNION／deploy は additive＝省略は削除しない・削除は destructiveChanges／挿入は XSD グルーピング遵守／checkonly は access 変化非捕捉）・アドバイザリー専用ブラストレンジ〕。
+カスタム項目・権限セット・入力規則／承認プロセス／FlexiPage 作成／レポートタイプ／Apex トリガー＋テスト／FlexiPage の App 単位割当／リストビュー＋ReportFolder＋Report 本体〔カスタムレポートタイプ参照は `reportType` に `__c` 付きで〕／FlexiPage のプロファイル単位割当＋既存 unmanaged アプリ上書き境界／Flow オーバーライド〔`isOverridable`・置換型・全置換〕／LWC＋StaticResource〔管理対象レコードページ配置・`$Resource` 参照・`@AuraEnabled` 業務 Apex 配備〕／Visualforce ページ（描画面VF）＋非トリガ Apex クラス〔VF カスタムコントローラ・quick deploy〕／カスタムメタデータ〔型＋レコード・型→レコード 2 段配備・`xmlns:xsd` 宣言必須・レコードはメタデータ API 配備のみ〕／共有ルール〔`SharingRules` 2 型＝所有者ベース／条件ベース・**衝突検知つき追記**（owner rule は (sharedFrom,sharedTo) で一意化＝衝突追記が既存 access を silent 縮小しうる／criteria rule は (sharedTo,field,value) で一意化されず並存＝実効UNION／deploy は additive＝省略は削除しない・削除は destructiveChanges／挿入は XSD グルーピング遵守／checkonly は access 変化非捕捉）・アドバイザリー専用ブラストレンジ〕。
 
 各種別の確定した癖は `references/metadata-type-recipes.md`、共有モデル設定は `references/sharing-model.md`。
 
 ## 残る要実機確認
 
 - トライアル org で sandbox 作成可否（保護 org 直接運用の前提では着手不要）。
-- **Report 本体（カスタムレポートタイプ参照）の Metadata 配置**: `invalid report type`＝Metadata 配置不可と確定。代替は UI 作成、または将来 API 仕様変更時に再検証。ReportType 自体は Metadata 配置可。
 - **既存アプリ割当上書きの境界続き**: サブスクライバ自身の unmanaged アプリ上書きは技術的に可能と確認（高影響で無確認 deploy 禁止）。**管理（installed）アプリ本体の割当改変**は改変不可境界の別ケースで未検証。
 - Apex トリガーの**本番**カバレッジ運用（`RunLocalTests` で org 全体 75%・既存サブスクライバテストの健全性）は保護org では `RunSpecifiedTests` で代替検証済。**本番投入時に org 全体カバレッジ（`RunLocalTests`・75%以上）と既存サブスクライバテストの健全性を実機確認する**（本番展開前の必須ゲート）。
 - **Flow オーバーライドの本番 active 化経路**: 検証 org は `status=Active` deploy で有効化が完結したが、本番は Flow が非アクティブ配備＋別途有効化（Tooling REST PATCH 等）になりうる。本番投入時に有効化経路を実機確認する（本番展開前の必須ゲート・§安全弁7-b）。
@@ -222,6 +226,7 @@ PSA/IMA のバージョンアップ後は、既存カスタマイズの回帰を
 
 ## 変更履歴
 
+- v3.11.0（2026-09-26）: レポートとメタデータ配備まわりの是正。(1) **誤記の是正**: カスタムレポートタイプを参照するレポートは Metadata で配置できないと書いていたが、`reportType` に `{DeveloperName}__c` を書けば配置できる（種別の行・実証済みの型・残る要実機確認の該当行を直した）。(2) 手順5に、配備の成否は全体の `status` で判定し「OK」の行を組織に残ったことと読まないこと、段階配備（レポートタイプ→レポート、項目→レイアウト）を追加。(3) 手順6に、レポートは実行して総計を確かめるまで・画面は利用者の経路で開いて初期表示を見るまでを追加。(4) 手順7の発火点を操作に紐づけた。(5) プリフライト手順0に、分類・区分・階層の要件はカスタム項目を作る前に製品の集計軸（セグメント）に載るかを確かめる1段を追加。references では、説明文の型に表示範囲・結合の要素と形式別の書き分けを、ReportType の手順に `<name>` を書かないこと等を、設計書の出力に標準へ戻す手順を足した。
 - v3.10.0（2026-09-10）: 変更履歴 v3.6.0 の行に日付が無かったのを補った（他の行は「vX.Y.Z（YYYY-MM-DD）:」の形で揃っている）。
 - v3.9.0（2026-09-09）: 設計書の版の作法（上書きしない・自己完結・変更履歴）を ti-core `references/deliverable-versioning.md` へ寄せ、`references/customization-design-doc.md` は参照だけを持つ形にした（帳票側と同じ 1 行を別々に持っていた重複の解消）。
 - v3.8.0（2026-09-07）: **使わなくなった項目を廃止する手順を追加**（`references/metadata-type-recipes.md §使わなくなった項目を廃止する`）。本スキルはカスタマイズを**足す**手順しか持たず、**引く**ときの手順が無かった。**廃止は削除ではない**（消さずに見えなくすれば、既存の参照を壊さずに新しく使い始める人だけを止められる）ことを起点に、段階A（見えなくする・既存の計算に影響なし・単独で先行できる）と段階B（参照を切る・代替と同時にしか打てない）へ分けた。**自分で作った項目と PSA/IMA が提供している項目では打てる手がまるごと変わる**ため、プリフライト軸1（改変不可境界）を分岐条件に置き、提供元の項目では「完全に見えなくする」ところまで届かないこと・届かないぶんを迂回のカスタマイズで埋めないことを明記した。軸5（項目非表示の下流依存）から本節を辿れるようにした。

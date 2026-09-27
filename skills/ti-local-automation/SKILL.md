@@ -1,8 +1,8 @@
 ---
 name: ti-local-automation
-description: 本人権限内で PSA/IMA を任意の Salesforce API（REST/Tooling/Bulk/Composite/バイナリ/独自 Apex REST）でローカル操作する能力スキル。AI がローカルでスクリプトを生成・実行し、標準 MCP ツールでは届かない操作（大容量・バイナリのファイル添付＋公開リンク発行、一括処理、Composite 等）を安全に行う。TRIGGER when 標準 MCP ツールに無い API 操作・商談等へのファイル添付＋公開リンク発行・大容量/バイナリの授受・Bulk/Composite・独自 Apex REST 呼び出しをローカルスクリプトで行う。DO NOT TRIGGER when 会話内の少量の参照・更新（標準 MCP で足りる）=標準 MCP/ti-update、業務データの一括移行の型と機構=ti-data-load、メタデータ定義の配備=ti-metadata、接続・認証の準備そのもの=ti-rollout。
-version: 0.5.0
-updated: 2026-09-09
+description: 本人権限内で PSA/IMA を任意の Salesforce API（REST/Tooling/Bulk/Composite/バイナリ/独自 Apex REST）でローカル操作する能力スキル。AI がローカルでスクリプトを生成・実行し、標準 MCP ツールでは届かない操作（大容量・バイナリのファイル添付＋公開リンク発行、一括処理、Composite 等）を安全に行う。TRIGGER when 標準 MCP ツールに無い API 操作・商談等への大容量/バイナリのファイル添付＋公開リンク発行・大容量/バイナリの授受・Bulk/Composite・独自 Apex REST 呼び出しをローカルスクリプトで行う。DO NOT TRIGGER when 会話内の少量の参照・更新（標準 MCP で足りる）=標準 MCP/ti-update、会話の接続に任意のREST呼び出しを受けるツール（dispatch系）があるときの公開リンクの1件発行・入力規則やフロー定義の読み取り（会話の接続で足りる）、業務データの一括移行の型と機構=ti-data-load、メタデータ定義の配備=ti-metadata、接続・認証の準備そのもの=ti-rollout。
+version: 0.6.0
+updated: 2026-09-26
 ---
 
 # ti-local-automation — ローカル API スクリプティング（任意 API 操作の機構）
@@ -13,7 +13,7 @@ updated: 2026-09-09
 
 ## 前提（認証・接続）
 
-- 本人権限内の **api スコープ OAuth トークン**（専用 ECA・ローカル本人認証）を使う。準備・認証の手順は **ti-rollout `references/api-eca-setup.md`** が持つ（本スキルでは再掲しない）。トークンは OS キーチェーンに保管。
+- 本人権限内の **api スコープ OAuth トークン**（専用 ECA・ローカル本人認証）を使う。準備・認証の手順は **ti-rollout `references/api-eca-setup.md`** が持つ（本スキルでは再掲しない）。トークンは OS キーチェーンに保管。**認証のヘルパーも本スキルのスクリプトも配布物ではなく、AIが同referenceと本スキルから実行時に生成する**——挙動を変えたいときに直すのは文書で、別に実装する作業は無い。
 - できることは常に**本人が Salesforce でできる範囲**に限られる（越権しない）。
 
 ## このスキルが持つもの・持たないもの
@@ -32,6 +32,7 @@ updated: 2026-09-09
 | **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md`（同梱の版と公開されている最新版を照合） |
 | **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md`（推測で挙動を組み立てず、ナレッジを引く） |
 | org へ書き込む直前（作成・更新・添付・Bulk・Composite） | ti-core `references/safety-gate.md`（承認ドラフト提示・ドライラン→人が承認） |
+| **削除・一括更新を実行する直前** | ti-data-load `references/boundaries-and-gates.md §削除・一括更新の前に、対象の範囲を件数で確かめる`（件数と代表数件を先に出す） |
 | 書込前の構造ゲート・API 名・型が要る瞬間 | ti-reference `references/write-index.md` |
 | 認証・接続が未準備 | ti-rollout（本人接続の準備・api スコープ ECA） |
 | 大量の業務データ投入・移行 | ti-data-load（型と機構） |
@@ -42,6 +43,7 @@ updated: 2026-09-09
 ## レシピ
 
 - **ファイル添付＋公開リンク**: 商談等へ ContentVersion をマルチパートで添付（`FirstPublishLocationId` で対象レコードへ紐付け）→ ContentDistribution で公開リンク（パスワードなし・期限指定）発行 → URL 返却。**ファイル本体は会話に載せずパス／ディスク経由**（実証済み・15MB 破損なし）。公開リンクは**パスワードなしなら URL を知る誰でもアクセス可**になるため、発行時の safety-gate 承認ドラフトに**公開範囲（URL を知る誰でも／期限）**を明記し、必要ならパスワード付き・短期限を選ぶ。
+  - **会話の接続で足りる場合がある。** 会話から使う接続が任意のREST呼び出しを受けるツール（`dispatch`／`dispatch_readonly` のような名前）を持っていれば、ContentVersionの作成とContentDistributionによる公開リンクの発行を**会話から1件ずつ**行える（2026-09-24実機で201・公開リンクの値の取得まで確認）。**本レシピ（ローカルスクリプト）を使うのは、ファイル本体が大容量・バイナリで会話に載せられないとき、または件数が多いとき**に限る。会話の接続がそのツールを持たないなら、従来どおり本レシピを使う。どちらの経路でも公開範囲の承認（上記）は同じように通す
 - **ライブラリの特定フォルダへ配置**: `FirstPublishLocationId` にライブラリ（ContentWorkspace）を指定してアップロード（フォルダ ID の直指定は本番で受け付けられないことがある）→ 生成された `ContentFolderMember` の `ParentContentFolderId` を目的フォルダ（ContentFolder）へ更新して移動。パスワード付き・無期限等は ContentDistribution の `PreferencesPasswordRequired`／`PreferencesExpires` で指定（本番実証済み）。
 - （順次追加）一括更新（Bulk/upsert のうち移行に当たらない稼働後の少量〜中量）、Composite での複数レコード一括作成、独自 Apex REST 呼び出し 等。
 
@@ -78,6 +80,7 @@ API 呼び出しは**失敗を既定で例外にする**。エラーを戻り値
 ## 原則
 
 - **本人権限内・最小権限**。書込は承認・ドライラン。削除は既定で行わない。
+- **削除・一括更新の前に、対象の範囲を件数で確かめる [REQUIRED]。** 絞り込み（WHERE）の無いクエリの結果を削除・一括更新へ渡さない／実行前に件数と代表数件（名前と親）を出して意図した範囲と合うか確かめる／削除なら論理削除が原則の対象かを先に引く／実行後に件数で突き合わせる。手順の正本はti-data-load `references/boundaries-and-gates.md §削除・一括更新の前に、対象の範囲を件数で確かめる`。**成功が返っても範囲が正しかった証明にはならない**（§失敗を握りつぶさないは失敗を拾う規律で、成功した誤りは拾えない）。
 - **大きなデータを AI の会話に通さない**（パス／ディスク経由でスクリプトが直接扱う）。
 - **認証・機構の重複を作らない**（接続＝ti-rollout、型＝ti-reference、移行＝ti-data-load へ委譲）。本スキルは「任意 API を叩く機構」に徹する。
 - 利用者向け出力の規律は ti-core `references/output-discipline.md` が正本（業務語へ翻訳し、レコードはリンク化する。鍵値も出さない）。本スキルへ書き写さず、レコードを示す出力を書く直前に読む。

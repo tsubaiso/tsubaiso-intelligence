@@ -1,8 +1,8 @@
 ---
 name: ti-spec-view
 description: 【ベータ】PSA/IMA導入後に顧客がorgへ加えたカスタマイズ仕様を可視化し、ブラックボックス化を解消する能力スキル。TRIGGER when 顧客固有カスタマイズ（カスタムオブジェクト・項目・入力規則・フロー）の一覧化、標準との差分ハイライト、各カスタマイズの業務的意味の記述・訂正・確信度/鮮度の確認、当社・パートナーの許可つきカスタマイズ把握。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、レコードの作成・更新・入力支援は ti-update、実装形態の判断は ti-lifecycle、レコードを検索して数値を出すだけは ti-reference。
-version: 0.3.0
-updated: 2026-09-01
+version: 0.4.0
+updated: 2026-09-26
 ---
 
 # ti-spec-view — 仕様可視化

@@ -83,12 +83,15 @@ ReportType（カスタムレポートタイプ）は「対象オブジェクト�
    - `baseObject` = 対象オブジェクトの API 名（管理対象は名前空間付き）。
    - 各 `columns` は `field` ＋ `table` ＋ `checkedByDefault`。`table` は baseObject の API 名（同一セクションでは baseObject、join 先セクションでは `Base.Relationship` 形式）。
    - `field` は**標準項目＝素の API 名（`Id`/`Name`/`CreatedDate`）、管理カスタム項目＝名前空間付き、サブスクライバ追加項目＝素の API 名**。
-3. **オーサリング**: `reportTypes/{Name}.reportType-meta.xml`。最小要素＝`baseObject` / `category`（管理 ReportType 実例に倣い `other` が安全）/ `deployed`（`true`）/ `label` / `sections`（`columns` 群＋`masterLabel`）。`description` は任意。**サブスクライバ ReportType は名前空間なし**。
+3. **オーサリング**: `reportTypes/{Name}.reportType-meta.xml`。最小要素＝`baseObject` / `category`（管理 ReportType 実例に倣い `other` が安全）/ `deployed`（`true`）/ `label` / `sections`（`columns` 群＋`masterLabel`）。`description` は任意。**サブスクライバ ReportType は名前空間なし**。**`<name>` 要素は書かない**（癖⑤）。
+   - **多段の結合**: `<join>` を入れ子にし、内側ほど深い階層にする（外側の `<join>` の `relationship` が `baseObject` 直下の子リレーション）。各 `<join>` に `outerJoin`（`true`＝相手を持たないレコードも出す）を置く。**`outerJoin` の選択は、そのレポートタイプを使うレポートの結果の集合を決める**（`report-description.md §4と5は、出る集合を絞り込みより先に決める`）。
+   - **結合先セクションの `table`** は、`baseObject` から子リレーション名を `.` でつないだパスで書く（例: `{baseObject}.{rel1}__r.{rel2}__r`）。
+   - 取得（retrieve）で返る要素の並びは `baseObject` → `category` → `deployed` → `description` → `join` → `label` → `sections` で、この並びで書けば通る（並びが必須かどうかは未確認）。
 4. **checkonly → deploy → verify**: 中核ループ。`--metadata "ReportType:{名前}"` で対象を絞る。checkonly はテスト 0 件のため quick deploy 不可＝通常 deploy。**CLI/クライアントが finalize 段階でタイムアウトしても job-id の `deploy report`、または下記 verify で実判定する**。
    - **verify は `sf org list metadata --metadata-type ReportType` の一覧で対象が `namespacePrefix=null`・`lastModifiedDate` 直近で実在することを確認する**（ReportType は Tooling SOQL 向きではないため metadata list が確実）。
 5. **整合確認**: ReportType は読み取り専用の報告定義で VR・トリガを発火させないが、列に出す項目の FLS（権限セット）と参照解決が前提。サブスクライバ項目を列に出すなら §カスタム項目＋権限セット＋入力規則 の FLS 付与と同じ権限セットで可視性を担保する。
 
-**確定した癖**: ①管理対象オブジェクトを baseObject にしたサブスクライバ ReportType 追加可（管理・サブスクライバ既存と共存）。②サブスクライバ項目を素の API 名で報告列に指定可・管理項目は名前空間付き・`table` は baseObject API 名。③`category=other`・最小要素は baseObject/category/deployed/label/sections。④verify は metadata list（Tooling SOQL 不向き）／finalize タイムアウトは job-id で実判定。
+**確定した癖**: ①管理対象オブジェクトを baseObject にしたサブスクライバ ReportType 追加可（管理・サブスクライバ既存と共存）。②サブスクライバ項目を素の API 名で報告列に指定可・管理項目は名前空間付き・`table` は baseObject API 名。③`category=other`・最小要素は baseObject/category/deployed/label/sections。④verify は metadata list（Tooling SOQL 不向き）／finalize タイムアウトは job-id で実判定。⑤**`<name>` 要素を書くと、検証デプロイが `Element {http://soap.sforce.com/2006/04/metadata}name invalid at this location in type ReportType` で落ちる**（レポートタイプの名前はファイル名から取られる。取得した定義にも `<name>` は無い）。削るだけで通る。⑥多段の結合は `<join>` の入れ子、結合先セクションの `table` は子リレーション名を `.` でつないだパス。
 
 ## ラベル・選択リスト値の翻訳（CustomObjectTranslation）
 
@@ -144,14 +147,22 @@ App 単位割当に続き、(a) プロファイル単位の割当（`profileActi
 
 ## リストビュー（ListView）／レポート本体（Report）
 
-ReportType が「報告で使える列の土台」なのに対し、ListView と Report 本体は user-content 寄り。ListView は管理対象オブジェクトへサブスクライバ追加でき、Report 本体は配置可否がレポートタイプの種類で分かれる。
+ReportType が「報告で使える列の土台」なのに対し、ListView と Report 本体は user-content 寄り。ListView は管理対象オブジェクトへサブスクライバ追加でき、レポート本体は参照するレポートタイプの種類で書き方が分かれる。
 
 1. **ListView（管理対象オブジェクトへサブスクライバ追加）**: `objects/{Obj}/listViews/{Name}.listView-meta.xml`。最小要素＝`fullName`（サブスクライバは名前空間なし）／`columns`（標準は `NAME`、管理は名前空間付き `tb_PSA__xxx__c`、サブスクライバ項目は素の API 名）／`filterScope`（`Everything` 等）／`filters`（`field`/`operation`/`value`）／`label`。**チェックボックス項目のフィルタ値は `1`／`0`（`true`／`false` は不可）**。既存ページから命名を確認（中核ループ author）。管理 ListView と共存追加可。
 2. **ReportFolder（サブスクライバ公開フォルダ）**: `reports/{Folder}.reportFolder-meta.xml`。最小要素＝`accessType`（`Public`）／`name`／`publicFolderAccess`（`ReadWrite`）。サブスクライバ ReportFolder 作成可。
-3. **Report 本体（レポートタイプ依存）**: `reports/{Folder}/{Report}.report-meta.xml`。最小要素＝`name`／`format`（`Tabular` 等）／`reportType`／`columns`（`{baseObjectApi}${fieldApi}`）。**`reportType` が標準レポートタイプ（例 `Opportunity`）の Report は配置可。`reportType` がカスタムレポートタイプ（自作・管理問わず）の Report は `invalid report type` で配置不可**（レポートタイプを同一 deploy に同梱しても解消しない＝Salesforce 既知の制約）。**したがって ReportType が配置可能なキャリアで、カスタムレポートタイプ上の Report 本体は UI 作成が現実解**。
-4. **checkonly → deploy → verify**: 中核ループ。ListView/ReportFolder の verify は `sf org list metadata --metadata-type ListView`／`ReportFolder` で `namespacePrefix=null` 実在確認。
+3. **Report 本体（レポートタイプ依存）**: `reports/{Folder}/{Report}.report-meta.xml`。最小要素＝`name`／`format`（`Tabular` 等）／`reportType`／`columns`。
+   - **カスタムレポートタイプ（自作・管理問わず）を参照するときは、`reportType` に `{DeveloperName}__c` を書く。** `sf org list metadata --metadata-type ReportType` が返す名前は `__c` が付かない形（管理は `{名前空間}__{名前}`、サブスクライバは `{名前}`）で、そのまま書くと `invalid report type` で落ちる。取得したレポートの定義には `__c` 付きで入っている。
+   - **`columns` の書き方もレポートタイプの種類で違う。** カスタムレポートタイプ上では `{baseObjectApi}${fieldApi}`、オブジェクトそのものの標準レポートタイプ上では `{objectApi}.{fieldApi}`（名前などの標準列は `CUST_NAME` のような独自の名前）。同じレポートタイプを使う既存のレポートを1本取得して確かめてから書く。
+   - **集計軸・列に使う項目が、レポートタイプの列に出ているかを作る前に確かめる。** 出ていない項目を指定すると `Invalid field name` で落ちる。パッケージ同梱のレポートタイプに列が無いときは、それを編集せず、カスタムレポートタイプを新しく作る（§レポートタイプ（ReportType））。
+   - **期間フィルタ（`timeFrameFilter`）は省略しない。** 省略すると全期間にはならず、組織の既定の期間（実測では当会計四半期）が入る。対象データが期間外だと、**配備は成功するのに実行結果が0件になる**。全期間にしたいときは `INTERVAL_CUSTOM` で開始日・終了日を対象を覆う範囲に置く。
+   - **依存するレポートタイプは別の回で先に配備する**（`SKILL.md` §中核ループ 手順5）。同じ回にまとめると、レポート側の失敗でレポートタイプまで巻き戻る。
+4. **checkonly → deploy → verify**: 中核ループ。ListView/ReportFolder の verify は `sf org list metadata --metadata-type ListView`／`ReportFolder` で `namespacePrefix=null` 実在確認。**レポートは配備の成功で完了にしない。実行して総計を確かめ、さらに利用者が開く経路で開いて初期表示を見るまでが突合**（`SKILL.md` §中核ループ 手順6）。開いたときに見るもの:
+   - **全期間のマトリックスは最古の月から並ぶ。** 対象データが直近なら、開いた直後に見えるセルが全部0になる。数字が正しくても、開いた人には使えないと映る
+   - **集計軸に該当するレコードがあるだけで行が立つ。** 金額0の行が並んで、目的の行が埋もれていないか
+   - 並び順・列幅・目的の数字までのスクロール量
 
-**確定した癖**: ①管理対象オブジェクトへサブスクライバ ListView 追加可（チェックボックスフィルタ値は `1`/`0`。`true` は「「0」または「1」を使用してください」で失敗）。②サブスクライバ ReportFolder 作成可。③**Report 本体は標準レポートタイプなら配置可・カスタムレポートタイプ参照は Metadata 配置不可**（ReportType が配置キャリア／Report 本体は UI 作成が現実解）。
+**確定した癖**: ①管理対象オブジェクトへサブスクライバ ListView 追加可（チェックボックスフィルタ値は `1`/`0`。`true` は「「0」または「1」を使用してください」で失敗）。②サブスクライバ ReportFolder 作成可。③**レポート本体はカスタムレポートタイプ参照でもメタデータで配置できる。`reportType` は `{DeveloperName}__c`**（一覧が返す名前のままでは `invalid report type`）。④期間フィルタを省略すると組織既定の期間が入り、配備は通って実行結果だけが0件になる。
 
 ## Flow オーバーライド（`isOverridable`）
 
