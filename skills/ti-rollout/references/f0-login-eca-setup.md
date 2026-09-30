@@ -7,7 +7,7 @@ PSA のパッケージにログイン用の外部クライアントアプリケ�
 | | 本手順の ECA | api スコープ ECA |
 |---|---|---|
 | 用途 | TI のログイン基盤への Salesforce ログイン | ローカルスクリプト実行の本人接続 |
-| コールバック先 | TI のログイン基盤（当社ホスト） | `http://localhost:1717/OauthRedirect` |
+| コールバック先 | TI のログイン基盤（当社ホスト） | ローカルのループバック（同梱 `Tsubaiso_Intelligence` は `http://localhost:8787/callback`、手作りは `http://localhost:1717/OauthRedirect`） |
 | OAuth 範囲 | `openid` `api` `refresh_token` | `api` `refresh_token` |
 | シークレット | **必要**（当社へ預ける） | 使わない |
 | PKCE | **要求しない** | 要求する |
