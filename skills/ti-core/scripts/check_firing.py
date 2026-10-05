@@ -19,11 +19,17 @@
 判定できるのは次の2層まで。
 
   L1 事象の有無     … その操作・その主張が記録に在るか
-  L2 事象の対の成立 … A が在るなら、その前に B が在るか（順序と対象の一致つき）
+  L2 事象の対の成立 … A が在るなら、その前（または後）に B が在るか（順序と対象の一致つき）
   L3 内容への従属   … B の返りの中身に従って A を行ったか  ← **判定できない**
 
-したがって発火点は「トリガ事象 → 先行必須事象」の形でしか宣言できない。
+したがって発火点は「トリガ事象 → 必須事象」の形でしか宣言できない。必須事象は既定で
+トリガより前に探し、`requires.order: after` を書いたときだけトリガより後に探す
+（「配備したあとに設計書を出す」のような後始末の規律。2026-10-02 追加）。
 「〜する瞬間」「〜を検討するとき」のように痕跡を残さない引き金は宣言できない。
+
+トリガはツール名（`trigger.tool`）のほか、実行したコマンドの文字列（`trigger.command`）でも
+当てられる。`sf project deploy start` は Bash やローカル実行の MCP から打たれ、ツール名には
+現れないため（2026-10-02 追加）。
 
 ## 使い方
 
@@ -105,6 +111,24 @@ DEFAULT_BASELINE = "2026-08-01"
 
 # 読込系ツール（requires.read_path の判定に使う）
 READ_TOOLS = {"Read", "read_file", "read_multiple_files", "get_file_contents"}
+
+# 書込系ツール（requires.write_path の判定に使う）
+WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit", "write_file", "edit_block",
+               "create_or_update_file", "push_files"}
+
+# コマンドを渡すキー（trigger.command の判定に使う）。Bash は `command`、
+# ローカル実行の MCP（Desktop Commander の start_process 等）も `command` で渡す
+COMMAND_KEYS = ("command", "cmd")
+
+
+def extract_command(inp):
+    if not isinstance(inp, dict):
+        return ""
+    for k in COMMAND_KEYS:
+        v = inp.get(k)
+        if isinstance(v, str) and v:
+            return v
+    return ""
 
 
 # --------------------------------------------------------------------------
@@ -415,22 +439,31 @@ def _match_tool(patterns, name):
     return False
 
 
-def evaluate_turn(point, turn, prior_tools):
+def evaluate_turn(point, turn, prior_tools, later_tools=None):
     """1 turn を判定して結果の並びを返す。
 
     返す status は fired / missed / undetermined の3値。
     **未判定を fired にも missed にも混ぜない**（確認できた項目だけを確認済みと表示する）。
+
+    later_tools はこの turn より後の turn のツール呼出し（`requires.order: after` で使う）。
     """
     trig = point.get("trigger") or {}
     req = point.get("requires") or {}
     scope = str(req.get("scope") or "session")
+    order = str(req.get("order") or "before")
     out = []
 
     events = []
-    if trig.get("tool"):
+    if trig.get("tool") or trig.get("command"):
+        # tool と command を両方書いたら両方に当たるものだけ。command だけなら
+        # どのツールから打たれたかを問わない
         for t in turn["tools"]:
-            if _match_tool(trig["tool"], t["name"]):
-                events.append(("tool", t))
+            if trig.get("tool") and not _match_tool(trig["tool"], t["name"]):
+                continue
+            if trig.get("command") and not _match_tool(trig["command"],
+                                                       extract_command(t["input"])):
+                continue
+            events.append(("tool", t))
     # text_all は「すべてに当たる」＝共起の要求。1本の正規表現へ先読みで畳むと
     # 長文で計算量が跳ねるので、短い式を順に当てる形にしてある。
     text_pats = trig.get("text_all") or ([trig["text"]] if trig.get("text") else [])
@@ -443,8 +476,13 @@ def evaluate_turn(point, turn, prior_tools):
                 break
 
     for kind, ev in events:
-        window = list(turn["tools"]) if scope == "turn" else prior_tools + turn["tools"]
-        window = [w for w in window if w["seq"] < ev["seq"]]
+        if order == "after":
+            window = list(turn["tools"]) if scope == "turn" \
+                else turn["tools"] + list(later_tools or [])
+            window = [w for w in window if w["seq"] > ev["seq"]]
+        else:
+            window = list(turn["tools"]) if scope == "turn" else prior_tools + turn["tools"]
+            window = [w for w in window if w["seq"] < ev["seq"]]
 
         want_obj = None
         undetermined = False
@@ -461,6 +499,11 @@ def evaluate_turn(point, turn, prior_tools):
                 if w["name"] not in READ_TOOLS and "read" not in w["name"].lower():
                     continue
                 if not re.search(str(req["read_path"]), _flat(w["input"])):
+                    continue
+            if req.get("write_path"):
+                if w["name"] not in WRITE_TOOLS and "write" not in w["name"].lower():
+                    continue
+                if not re.search(str(req["write_path"]), _flat(w["input"], limit=600)):
                     continue
             if req.get("same_object") and want_obj is not None:
                 if extract_object(w["input"]) != want_obj:
@@ -494,7 +537,10 @@ def scan(files, points, date_from=None, date_to=None):
         reached += 1
         sid = hashlib.sha1(f.encode("utf-8")).hexdigest()[:12]
         prior = []
+        need_later = any(str((p.get("requires") or {}).get("order") or "before") == "after"
+                         for p in points)
         for ti, turn in enumerate(turns):
+            later = [t for nxt in turns[ti + 1:] for t in nxt["tools"]] if need_later else None
             lts = local_ts(turn["ts"])
             in_range = True
             if date_from and lts and lts[:len(date_from)] < date_from:
@@ -503,7 +549,7 @@ def scan(files, points, date_from=None, date_to=None):
                 in_range = False
             if in_range:
                 for p in points:
-                    for r in evaluate_turn(p, turn, prior):
+                    for r in evaluate_turn(p, turn, prior, later):
                         r["session"] = sid
                         r["turn"] = ti
                         r["file"] = os.path.basename(f)
@@ -633,6 +679,34 @@ WRONG_OBJECT = [
 ]
 
 
+# 後続必須（requires.order: after）とコマンド文字列のトリガの検体。
+# 宣言ファイルに依存させず、自己検証の中で宣言を組む
+AFTER_POINT = {
+    "id": "_selftest_doc_after_deploy",
+    "severity": "advisory",
+    "trigger": {"command": r"sf\s+project\s+deploy\s+start"},
+    "requires": {"write_path": "カスタマイズ設計書", "order": "after", "scope": "session"},
+}
+
+_DEPLOY = {"role": "assistant", "content": [
+    {"type": "tool_use", "name": "Bash",
+     "input": {"command": "sf project deploy start -o demo -d force-app"}}]}
+_DOC = {"role": "assistant", "content": [
+    {"type": "tool_use", "name": "Write",
+     "input": {"file_path": "/w/output/カスタマイズ設計書/demo_カスタマイズ設計書_v2.md",
+               "content": "..."}}]}
+
+AFTER_FIRED = [{"role": "user", "content": "フローを直して配備して"}, _DEPLOY,
+               {"role": "user", "content": "設計書も更新して"}, _DOC]   # 次の turn で書いた
+AFTER_MISSED = [{"role": "user", "content": "フローを直して配備して"}, _DEPLOY]
+AFTER_DOC_BEFORE = [{"role": "user", "content": "設計書を書いてから配備して"},
+                    _DOC, _DEPLOY]                                    # 前に書いても当たらない
+AFTER_OTHER_CMD = [{"role": "user", "content": "取得して"},
+                   {"role": "assistant", "content": [
+                       {"type": "tool_use", "name": "Bash",
+                        "input": {"command": "sf project retrieve start -o demo"}}]}]
+
+
 def _write_fixture(d, name, msgs):
     p = Path(d) / f"{name}.jsonl"
     with open(p, "w", encoding="utf-8") as fh:
@@ -673,6 +747,21 @@ def selftest(points, probe_store=False):
         for label, msgs, want in cases:
             f = _write_fixture(d, label.replace("（", "_").replace("）", ""), msgs)
             res, _ = scan([f], wp)
+            got = res[0]["status"] if res else "(検出なし)"
+            mark = "✓" if got == want else "✗"
+            if got != want:
+                ok = False
+            print(f"  {mark} {label}: 期待 {want} / 実測 {got}")
+
+        after_cases = [
+            ("後続必須・陰性（配備の後の turn で設計書を書いた）", AFTER_FIRED, "fired"),
+            ("後続必須・陽性（配備の後に設計書を書いていない）", AFTER_MISSED, "missed"),
+            ("後続必須・陽性（設計書は配備の前にしか書いていない）", AFTER_DOC_BEFORE, "missed"),
+            ("コマンドのトリガ（別の sf コマンドには当たらない）", AFTER_OTHER_CMD, "(検出なし)"),
+        ]
+        for label, msgs, want in after_cases:
+            f = _write_fixture(d, "after_" + str(abs(hash(label)) % 10 ** 8), msgs)
+            res, _ = scan([f], [AFTER_POINT])
             got = res[0]["status"] if res else "(検出なし)"
             mark = "✓" if got == want else "✗"
             if got != want:
