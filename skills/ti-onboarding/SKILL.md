@@ -1,8 +1,8 @@
 ---
 name: ti-onboarding
 description: 【ベータ】本番導入プロジェクトを工程進行・段取りする導入支援スキル（PSA/ERP導入・契約後寄り）。TRIGGER when 導入計画の立案・タスク分解、Fit&Gap や重要マスタ設計の工程進行、7工程（計画・管理／設計／制作／構築・設定／データ移行／教育／運用テスト）の現在地把握と次工程の段取り、Sandbox→本番への着地支援、必要な業務領域から順に立ち上げる部分導入の段取り、稼働後に新しい業務・新しい商品/サービスの事業が加わったときの業務プロセス・登録方式・マスタ設計の検討。DO NOT TRIGGER when 契約前の価値実証は ti-poc、個別要件の実装形態や Anonymous Apex 可否・運用移行の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
-version: 0.5.0
-updated: 2026-09-01
+version: 0.6.0
+updated: 2026-10-05
 ---
 
 # ti-onboarding — 導入支援（工程進行）
@@ -56,6 +56,7 @@ updated: 2026-09-01
 | 導入工程のどこにいて次に何をするか段取りする瞬間 | `references/process-map.md` | 現在の工程・環境（トライアル/Sandbox/本番） |
 | 必要な業務領域から順に立ち上げる（部分導入の）段取りをする瞬間 | `references/process-map.md` ＋ 本書 §必要な業務領域から順に立ち上げるとき | 立ち上げる領域・依存の向き・据え置く領域との境目に残るもの |
 | 設計工程で業務モデル・Fit&Gap・マスタ設計を対話で進める瞬間 | `references/design-lead-loop.md` | 業務プロセス説明・実帳票・関与すべき現場責任者 |
+| Fit&Gap で Gap の対応方針を書く瞬間 | ti-core `references/customization-proposal.md` | Gap になった要望（業務の対象と機能の呼び名） |
 | 稼働後に新しい業務・新しい商品/サービスの事業が加わった瞬間 | `references/design-lead-loop.md` §稼働後の新しい業務・事業への適用 | 新しい業務の範囲・取引の型（何を売り・いつ収益を認識し・何が原価か）・既存業務への波及の有無 |
 | onboarding モードの挙動・poc からの引き継ぎ・ロール別出し分けを決める瞬間 | `references/mode-and-handoff.md` | 契約状態・データ規模・ロール |
 | 設計工程で業務の流れ・構造・集計を示す瞬間 | ti-reference の該当 reference（`process-map.md` が案内） | 対象プロセス・意味定義の参照点 |
