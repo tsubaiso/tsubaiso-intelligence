@@ -212,15 +212,15 @@ ReportType が「報告で使える列の土台」なのに対し、ListView と
 3. **StaticResource オーサリング**: `staticresources/{name}.resource`（実体）＋ `.resource-meta.xml`（`contentType`）。角印画像・共通 CSS 等の全社共有資産。サブスクライバは名前空間なし。テンプレ（VF ページ等）からは `{!$Resource.{name}}` で参照する。
 4. **checkonly → deploy → verify**: 中核ループ。verify は上記 SOQL で `NamespacePrefix=null` 実在確認＋LWC の `js-meta.xml` の targets/objects を再 retrieve で確認。
 5. **配置（FlexiPage）**: LWC の可視化は FlexiPage に `componentInstance`（`componentName` はサブスクライバ LWC なら `c:{name}`）として載せ、割当は `SKILL.md` §安全弁6 に従う。**LWC 自体はコンポーネントとして自由に配備でき、可視化は FlexiPage 割当ゲートに従属**する（配備単位・ゲートが FlexiPage 配置を継承）。
-6. **業務ロジック Apex（`@AuraEnabled`）**: LWC が Apex からデータ取得する場合、`@AuraEnabled` メソッドを持つサブスクライバ ApexClass を同梱配備できる（管理対象パッケージ org で稼働実証）。PDF 出力は VF ページ＋サーバ側 `PageReference.getContentAsPdf()` 経路も可。**本番 75% カバレッジは本番投入前ゲート**（`SKILL.md` §安全弁5）。
+6. **業務ロジック Apex（`@AuraEnabled`）**: LWC が Apex からデータ取得する場合、`@AuraEnabled` メソッドを持つサブスクライバ ApexClass を同梱配備できる（管理対象パッケージ org で稼働実証）。帳票のPDF化には、VFページの`renderAs="pdf"`もApexの`PageReference.getContentAsPdf()`も使わない（描画はChromiumだけで行う。参照: ti-report `references/deploy-and-fields.md` §描画とPDF化の方式）。**本番 75% カバレッジは本番投入前ゲート**（`SKILL.md` §安全弁5）。
 
 > **証拠の限定**: 本節の確定事項は、検証 org に既にある帳票配備資産を **read-only で確認**して得たもの（新規 deploy を伴う一気通貫の検証ではない）。他節と証拠の質が異なる点に留意する。
 
-**確定した癖**: ①サブスクライバ LWC は `isExposed`＋`lightning__RecordPage`＋`targetConfigs objects` で管理対象レコードページに配置可（管理対象オブジェクトで成立）。②StaticResource は配備＋`$Resource` 参照可。③`@AuraEnabled` 業務 Apex ＋ VF `getContentAsPdf` の配備・稼働可（保護 org は 0% でも稼働・**本番 75% は本番投入前ゲート**）。④LWC 配置は FlexiPage 割当ゲートを継承する。
+**確定した癖**: ①サブスクライバ LWC は `isExposed`＋`lightning__RecordPage`＋`targetConfigs objects` で管理対象レコードページに配置可（管理対象オブジェクトで成立）。②StaticResource は配備＋`$Resource` 参照可。③`@AuraEnabled` 業務 Apex の配備・稼働可（保護 org は 0% でも稼働・**本番 75% は本番投入前ゲート**）。Apexの`PageReference.getContentAsPdf()`も配備でき実行もできるが、帳票のPDF化には使わない（上記の手順6）。④LWC 配置は FlexiPage 割当ゲートを継承する。
 
 ## Visualforce ページ（描画面VF）＋非トリガ Apex クラス
 
-帳票の描画面（VF ページ）と、そのカスタムコントローラ／データ取得を担う `@AuraEnabled` 等の**非トリガ業務ロジック Apex クラス**を配備する工程。Apex トリガーと違い発火型でなく、VF ページとコントローラを 1 デプロイ単位（ページ＋クラス＋テスト）で扱う。
+帳票の描画面（VF ページ）と、そのカスタムコントローラ／データ取得を担う `@AuraEnabled` 等の**非トリガ業務ロジック Apex クラス**を配備する工程。帳票の描画面としてのVFページは、データを差し込んだHTML/CSSをブラウザへ配信するだけで、`renderAs="pdf"`・`getContentAsPdf()`でPDF化しない（ti-report `references/deploy-and-fields.md` §描画とPDF化の方式）。Apex トリガーと違い発火型でなく、VF ページとコントローラを 1 デプロイ単位（ページ＋クラス＋テスト）で扱う。
 
 1. **既存の棚卸し**: `SELECT Name, NamespacePrefix FROM ApexPage WHERE NamespacePrefix = null` と `SELECT Name, NamespacePrefix, Status FROM ApexClass WHERE NamespacePrefix = null`（Tooling）で衝突名を確認。サブスクライバは名前空間なし。
 2. **オーサリング**: `pages/{Name}.page`（＋`.page-meta.xml`）と `classes/{Name}.cls`（＋`.cls-meta.xml`）。VF ページのカスタムコントローラに非トリガクラスを指定すると、両者が同一デプロイ単位で結線される。管理対象オブジェクトを参照する SOQL は名前空間付き API 名で書く。**テストクラスを同梱**（VF コントローラは `Test.setCurrentPage(Page.{VF名})`＋`ApexPages.currentPage().getParameters().put('id', …)` で被覆、`@AuraEnabled` メソッドは直接呼び出しで被覆。管理 VR・必須マスタ依存を避けるため `@isTest(SeeAllData=true)` で既存レコードを読む）。
@@ -248,7 +248,7 @@ ReportType が「報告で使える列の土台」なのに対し、ListView と
 
 ### まず: 廃止は削除ではない
 
-**消したくなっても、まず消さずに済ませられないかを見る。** 項目は自分が把握している場所以外からも参照されている。レポート、リストビュー、承認プロセスの開始条件、数式、Flow の分岐、取込定義、外部連携のマッピング——このどれかに入っていれば、消した瞬間にそれが壊れる。しかも壊れたことは、その仕組みを次に動かした人のところで起きる。
+**消したくなっても、まず消さずに済ませられないかを見る。** 項目は自分が把握している場所以外からも参照されている。レポート、リストビュー、承認プロセスの開始条件、数式、入力規則、Flow の分岐、取込定義、外部連携のマッピング——このどれかに入っていれば、消した瞬間にそれが壊れる。しかも壊れたことは、その仕組みを次に動かした人のところで起きる。
 
 **「見えなくする」だけで、廃止の目的はほぼ達成できる。** 新しく画面を開いた人はその項目に出会わない。既存の参照は動き続けるので、切り替えを促す時間を取れる。ゆえに廃止は2段階に分ける。
 
@@ -295,12 +295,12 @@ ReportType が「報告で使える列の土台」なのに対し、ListView と
 
 | # | やること | 押さえどころ |
 |---|---|---|
-| **B-1** | **参照を切る** | 数式・積み上げ・トリガ・Flow・画面のコンポーネント・外部連携から当該項目への参照を外す。**切り忘れると、見えなくしたのに値だけが更新され続ける** |
+| **B-1** | **参照を切る** | 数式・積み上げ・入力規則・トリガ・Flow・画面のコンポーネント・外部連携から当該項目への参照を外す。**切り忘れると、見えなくしたのに値だけが更新され続ける** |
 | **B-2** | **代替を同じタイミングで出す** | 切り替え先が同時に手に入るなら移行期間は要らない。手に入らないなら段階Bを保留する |
 
 ### 廃止の前に確認すること [REQUIRED]
 
-**「使っていないはず」で始めない。** `SKILL.md` §カスタマイズ着手プリフライト の**軸5（項目非表示の下流依存）**をそのまま適用する。確認するのは、レポート・リストビュー・承認プロセスの条件・数式・Flow・取込定義・外部連携での参照。
+**「使っていないはず」で始めない。** `SKILL.md` §カスタマイズ着手プリフライト の**軸5（項目非表示の下流依存）**をそのまま適用する。確認するのは、レポート・リストビュー・承認プロセスの条件・数式・入力規則・Flow・取込定義・外部連携での参照。**入力規則は見落としやすい**——空欄を禁じる入力規則は、項目の必須を外した後（段階A）でも、API・取込での登録を止め続ける。
 
 **確認はラベルと API 名の両方を渡す。** 業務側は画面に出ているラベルで答え、レポートや数式の調査は API 名で行うため、片方だけでは取りこぼす。
 

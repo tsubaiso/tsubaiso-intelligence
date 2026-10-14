@@ -71,7 +71,9 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as _dt
+import io
 import glob
 import hashlib
 import json
@@ -402,7 +404,7 @@ def local_ts(ts):
     return dt.astimezone().isoformat(timespec="seconds")
 
 
-def iter_session_files(globs, since_days=None, date_from=None, date_to=None):
+def iter_session_files(globs, since_days=None):
     seen, files = set(), []
     for g in globs:
         for f in glob.glob(g):
@@ -768,6 +770,16 @@ def selftest(points, probe_store=False):
                 ok = False
             print(f"  {mark} {label}: 期待 {want} / 実測 {got}")
 
+        # 宣言の検査の検体：応答本文のトリガと order: after の組み合わせは未判定（exit 2）
+        decl = Path(d) / "after_text.yml"
+        decl.write_text("- id: t_after_text\n  trigger:\n    text: 配備\n  requires:\n"
+                        "    tool: Write\n    order: after\n", encoding="utf-8")
+        with contextlib.redirect_stderr(io.StringIO()):
+            rc = main(["--points", str(decl)])
+        if rc != 2:
+            ok = False
+        print(f"  {'✓' if rc == 2 else '✗'} 宣言の検査（text + order: after）: 期待 exit 2 / 実測 exit {rc}")
+
     # 宣言パーサの検体
     try:
         parsed = parse_points(
@@ -831,6 +843,13 @@ def main(argv=None):
     for p in points:
         if "id" not in p or "trigger" not in p:
             print(f"未判定: id か trigger が無い宣言があります: {p}", file=sys.stderr)
+            return 2
+        # 本文の事象は turn の末尾に置く（seq=10**9）ため、後続の窓が常に空になり必ず不発になる
+        trig = p.get("trigger") or {}
+        if (str((p.get("requires") or {}).get("order") or "before") == "after"
+                and isinstance(trig, dict) and (trig.get("text") or trig.get("text_all"))):
+            print(f"未判定: order: after は応答本文のトリガ（text／text_all）と組み合わせられません"
+                  f"（ツール名かコマンドの文字列のトリガ専用）: {p['id']}", file=sys.stderr)
             return 2
 
     if a.selftest:

@@ -1,8 +1,8 @@
 ---
 name: ti-local-automation
-description: 本人権限内で PSA/IMA を任意の Salesforce API（REST/Tooling/Bulk/Composite/バイナリ/独自 Apex REST）でローカル操作する能力スキル。AI がローカルでスクリプトを生成・実行し、標準 MCP ツールでは届かない操作（大容量・バイナリのファイル添付＋公開リンク発行、一括処理、Composite 等）を安全に行う。TRIGGER when 標準 MCP ツールに無い API 操作・商談等への大容量/バイナリのファイル添付＋公開リンク発行・大容量/バイナリの授受・Bulk/Composite・独自 Apex REST 呼び出しをローカルスクリプトで行う。DO NOT TRIGGER when 会話内の少量の参照・更新（標準 MCP で足りる）=標準 MCP/ti-update、会話の接続に任意のREST呼び出しを受けるツール（dispatch系）があるときの公開リンクの1件発行・入力規則やフロー定義の読み取り（会話の接続で足りる）、業務データの一括移行の型と機構=ti-data-load、メタデータ定義の配備=ti-metadata、接続・認証の準備そのもの=ti-rollout。
-version: 0.7.0
-updated: 2026-09-28
+description: 本人権限内で PSA/IMA を任意の Salesforce API（REST/Tooling/Bulk/Composite/バイナリ/独自 Apex REST）でローカル操作する能力スキル。TRIGGER when 標準 MCP ツールに無い API 操作・商談等への数KBを超える・バイナリのファイル添付＋公開リンク発行・数KBを超える・バイナリの授受・Bulk/Composite・独自 Apex REST 呼び出しをローカルスクリプトで行う。DO NOT TRIGGER when 会話内の少量の参照・更新（標準 MCP で足りる）=標準 MCP/ti-update、会話の接続に任意のREST呼び出しを受けるツール（dispatch系）があるときの公開リンクの1件発行・入力規則やフロー定義の読み取り（会話の接続で足りる）、業務データの一括移行の型と機構=ti-data-load、メタデータ定義の配備=ti-metadata、接続・認証の準備そのもの=ti-rollout。
+version: 0.7.3
+updated: 2026-10-10
 ---
 
 # ti-local-automation — ローカル API スクリプティング（任意 API 操作の機構）

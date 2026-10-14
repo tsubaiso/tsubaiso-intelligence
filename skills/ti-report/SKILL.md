@@ -1,8 +1,8 @@
 ---
 name: ti-report
 description: 【ベータ】PSA/IMA顧客の帳票（見積・請求・注文・納品・検収 等）を自社レイアウト・項目へカスタマイズする能力スキル。TRIGGER when 帳票テンプレの新規作成・調整、データの流し込み、押印/DRAFT分岐の組み込み、帳票に出す項目の追加、帳票出力ボタン/描画面のorg配置、帳票の美観仕上げ、帳票項目マッピング設計書・カスタマイズ仕様書の出力と継続修正サイクル。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、文書→レコードの取込・入力支援は ti-update、導入プロジェクトの工程進行は ti-onboarding。
-version: 0.4.0
-updated: 2026-09-09
+version: 0.5.0
+updated: 2026-10-12
 ---
 
 # ti-report — 帳票カスタマイズ
@@ -32,7 +32,7 @@ PSA/IMA を使う顧客の帳票を、自社のレイアウト・項目に合わ
 | テンプレを作る・差込点を調整する・データを流し込む・意味定義を対応づける・押印/DRAFT分岐を組む | `references/template-and-mapping.md` | 帳票種別・源データの有無・承認状態の判定項目 |
 | 帳票をorgのレコードページに載せる・帳票に出す項目を増やす・反復調整して確定版を配備する | `references/deploy-and-fields.md` | 配置先・追加項目・配備する束 |
 | 帳票を作った後に設計書を出す・カスタマイズ仕様書を提示する・指示を反映して回す | `references/report-design-cycle.md` | 対象帳票の版・現状マッピング・変更指示 |
-| 帳票の体裁・美観を仕上げる・日本向け/海外向けの様式を選ぶ | `references/report-aesthetics.md` | 対象国・帳票種別・出力経路（画面印刷/サーバPDF） |
+| 帳票の体裁・美観を仕上げる・日本向け/海外向けの様式を選ぶ | `references/report-aesthetics.md` | 対象国・帳票種別・出力方式（ブラウザの印刷／帳票PDF生成サービス） |
 | 現状仕様を往復で詰める瞬間（設計書→仕様書→指示→反映の往復） | ti-core `references/spec-roundtrip.md` | 変更の選択肢・前提 |
 | **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md` | 引きたい製品・機能と、利用者の言い方 |
 | org へ書き込む直前（項目追加・デプロイ・生成PDFの添付） | ti-core `references/safety-gate.md` | 対象・承認ドラフト |
@@ -48,7 +48,7 @@ PSA/IMA を使う顧客の帳票を、自社のレイアウト・項目に合わ
 | `references/template-and-mapping.md` | テンプレの差込DSL＋流し込み（プレビュー経路とorg描画経路の記法差・落とし穴）／意味定義マッピング／押印・DRAFT判定と定型帳票との棲み分け |
 | `references/deploy-and-fields.md` | 帳票をレコードページに載せる中身の author（配備の実行は ti-metadata へ委譲）／カスタム項目追加の副フロー／反復調整／安全ゲート |
 | `references/report-design-cycle.md` | 帳票項目マッピング設計書・カスタマイズ仕様書の出力フォーマットと継続修正サイクル（カスタマイズのブラックボックス化解消） |
-| `references/report-aesthetics.md` | 美しい帳票の原則／サーバPDFとの両立／日本向け・海外向けの様式差／道具と型は標準・あてはめは顧客ごと |
+| `references/report-aesthetics.md` | 美しい帳票の原則／Chromiumでの印刷の指定／日本向け・海外向けの様式差／道具と型は標準・あてはめは顧客ごと |
 
 ## 原則
 

@@ -1,8 +1,8 @@
 ---
 name: ti-lifecycle
-description: 顧客orgカスタマイズを「どの実装形態で・いつ作るか」で判断する開発運用ライフサイクル判断スキル（局面に依存しない）。TRIGGER when 個別要件を宣言的（Flow/入力規則/数式/承認）・Apex・外部スクリプト・製品機能化のどれで実装するかの選択、Anonymous Apex で作ってよいか（設計・開発フェーズ限定・sandbox/トライアル）／運用フェーズへ移行してよいかの判断、着手前ゲートの適用。DO NOT TRIGGER when 導入プロジェクト全体の工程進行は ti-onboarding、契約前の体験演出は ti-poc、メタデータ配備の機構そのものは ti-metadata、個別レコードの申請前・承認前チェックは ti-update。
-version: 0.2.0
-updated: 2026-08-31
+description: 顧客orgカスタマイズを「どの実装形態で・いつ作るか」で判断する開発運用ライフサイクル判断スキル。TRIGGER when 個別要件を宣言的（Flow/入力規則/数式/承認）・Apex・外部スクリプト・製品機能化のどれで実装するかの選択、Anonymous Apex で作ってよいか／運用フェーズへ移行してよいかの判断、着手前ゲートの適用。DO NOT TRIGGER when 導入プロジェクト全体の工程進行は ti-onboarding、契約前の体験演出は ti-poc、メタデータ配備の機構そのものは ti-metadata、個別レコードの申請前・承認前チェックは ti-update。
+version: 0.2.1
+updated: 2026-10-11
 ---
 
 # ti-lifecycle — 開発運用ライフサイクル判断

@@ -3,12 +3,14 @@
 # 読むのは scripts/check_firing.py。書き方の規約は同スキルの
 # references/firing-observation.md §宣言の書き方 が正本。
 #
-# 宣言できるのは「トリガ事象 → 先行必須事象」の形だけ。
+# 宣言できるのは「トリガ事象 → 必須事象」の形だけ（必須事象は既定で先行、order: after で後続）。
 # トリガは痕跡に残るもの（ツール呼出し・応答本文）に限る。
 # 「〜する瞬間」「〜を検討するとき」は痕跡を残さないので宣言できない。
 #
 # severity: violation = 不発を終了コード 1 に反映する
 #           advisory  = 列挙するだけ（偽陽性が避けられない判定に使う）
+# lane:     どの段で判定するかの予約。現状は post（完了セッションの事後走査）だけが動き、
+#           check_firing.py はこのキーを読まない。pre を書いても実行前の判定は行われない
 
 - id: write_seam_before_record_write
   severity: violation
