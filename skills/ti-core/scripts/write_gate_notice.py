@@ -25,6 +25,11 @@ Claude Code の PreToolUse フックとして、配布プラグインの plugin.
 2. MCP: ツール名が `__dispatch` で終わり、method が POST で、url か body に
    `tb_PSA__`／`tb_IMA__` が現れるもの（`dispatch_readonly` は GET 専用なので対象外）
 
+確認事項（未確認）: MCP の `tool_input` のキー名（`method`／`url`／`body`）は、読み取り用ツール
+（`dispatch_readonly`）の定義でだけ確かめた（2026-10-11）。書込用ツール（`dispatch`）の定義は
+参照できる接続が無く、まだ確かめていない。キー名が違っていても案内が出ないだけで気づけないため、
+書込用ツールを持つ接続で `tool_input` のキー名を1回確かめ、違えば2.の照合を直す。
+
 自己検証: `python3 write_gate_notice.py --selftest`
 """
 import json

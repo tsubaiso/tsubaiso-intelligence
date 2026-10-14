@@ -48,3 +48,16 @@
   owner: "ti-core/references/knowledge-lookup.md"
   note: "トリガが応答本文なので post でしか成立しない（本文は送出前に存在しない）。文面の判定は偽陽性を避けられないので advisory に置き、終了コードへ反映しない"
   note2: "初版は可否語だけを見て母数 1953 になり壁紙化した。製品名との共起を必須にし、肯定側（できます・対応しています）は日常語と切れないので外した（config-governance §統制は陽性ケースで発火することを実測する 原則6）"
+
+- id: customization_doc_after_deploy
+  severity: advisory
+  lane: [post]
+  trigger:
+    command: "^(?![\s\S]*--dry-run)[\s\S]*sf\s+project\s+deploy\s+start"
+  requires:
+    write_path: "カスタマイズ設計書"
+    order: after
+    scope: session
+  message: "組織へ配備した後に、その組織のカスタマイズ設計書を出力する"
+  owner: "ti-metadata/SKILL.md（中核ループ手順7）"
+  note: "後続必須（配備の後にカスタマイズ設計書の出力を求める）の宣言のため、進行中のセッションも不発として集計する。--dry-run（組織へ保存しない検証）は否定先読みで除外する。ti-metadata 中核ループ手順7で対象外とする組織（ツバイソ株式会社の開発用の組織のうち、利用者がそうだと明示した組織）は、本宣言では除外しない。除外する場合は、利用者の宣言ファイルに本宣言を複製し、否定先読みに別名を追加して、そのファイルを --points で指定する（firing-observation.md §対象外の組織を観測から除く）"
