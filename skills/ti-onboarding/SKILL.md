@@ -1,8 +1,8 @@
 ---
 name: ti-onboarding
-description: 【ベータ】本番導入プロジェクトを工程進行・段取りする導入支援スキル（PSA/ERP導入・契約後寄り）。TRIGGER when 導入計画の立案・タスク分解、Fit&Gap や重要マスタ設計の工程進行、7工程（計画・管理／設計／制作／構築・設定／データ移行／教育／運用テスト）の現在地把握と次工程の段取り、Sandbox→本番への着地支援、必要な業務領域から順に立ち上げる部分導入の段取り、稼働後に新しい業務・新しい商品/サービスの事業が加わったときの業務プロセス・登録方式・マスタ設計の検討。DO NOT TRIGGER when 契約前の価値実証は ti-poc、個別要件の実装形態や Anonymous Apex 可否・運用移行の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
-version: 0.6.0
-updated: 2026-10-05
+description: 【ベータ】本番導入プロジェクトを工程進行・段取りする導入支援スキル（PSA/ERP導入・契約後寄り）。TRIGGER when 導入計画の立案・タスク分解、Fit&Gap や重要マスタ設計の工程進行、7工程（計画・管理／設計／制作／構築・設定／データ移行／教育／運用テスト）の現在地把握と次工程の段取り、Sandbox→本番への着地支援、必要な業務領域から順に立ち上げる部分導入の段取り、稼働後に新しい業務・新しい商品/サービスの事業が加わったときの業務プロセス・登録方式・マスタ設計の検討、要件定義でツバイソへの確認事項（ツバイソ照会票・「ツバイソ社確認」）を作る・受け取るとき。DO NOT TRIGGER when 契約前の価値実証は ti-poc、個別要件の実装形態や Anonymous Apex 可否・運用移行の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
+version: 0.8.0
+updated: 2026-10-15
 ---
 
 # ti-onboarding — 導入支援（工程進行）
@@ -54,6 +54,9 @@ updated: 2026-10-05
 | **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md` | 同梱 `.claude-plugin/plugin.json` の版 |
 | **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md` | 引きたい製品・機能と、利用者の言い方 |
 | 導入工程のどこにいて次に何をするか段取りする瞬間 | `references/process-map.md` | 現在の工程・環境（トライアル/Sandbox/本番） |
+| キックオフ（計画・管理工程）で要件定義の進め方を決める瞬間 | `references/tsubaiso-inquiry.md` §キックオフで合意する分担 | 利用者側の体制・TI の利用者 |
+| 資料にツバイソへの確認事項（「ツバイソ社確認」など）を書こうとした瞬間／利用者から「ツバイソに聞くべきか」と問われた瞬間 | `references/tsubaiso-inquiry.md` | 問い・引いた意味定義と製品ナレッジの結果 |
+| ツバイソの担当者として、利用者の照会票・確認事項の一覧を受け取った瞬間（回答を書き始める前） | `references/tsubaiso-inquiry.md` §ツバイソの側での扱い | 照会票（無ければ確認事項の原文） |
 | 必要な業務領域から順に立ち上げる（部分導入の）段取りをする瞬間 | `references/process-map.md` ＋ 本書 §必要な業務領域から順に立ち上げるとき | 立ち上げる領域・依存の向き・据え置く領域との境目に残るもの |
 | 設計工程で業務モデル・Fit&Gap・マスタ設計を対話で進める瞬間 | `references/design-lead-loop.md` | 業務プロセス説明・実帳票・関与すべき現場責任者 |
 | Fit&Gap で Gap の対応方針を書く瞬間 | ti-core `references/customization-proposal.md` | Gap になった要望（業務の対象と機能の呼び名） |
@@ -80,6 +83,7 @@ updated: 2026-10-05
 | `references/process-map.md` | PSA 7工程マップ（各工程で呼ぶ層2能力・ti-lifecycle 参照点・トライアル→Sandbox→本番の環境進行）＋ERP 工程の差分（仕訳分析ほか）＋大量 I/O のスクリプト経路 |
 | `references/design-lead-loop.md` | 設計工程の AI リード対話ループ（インプット→業務説明→操作説明→Fit&Gap→マスタ設計→反復）。マスタ設計シミュレーションは合成（接地=ti-reference／投入=ti-data-load／集計・可視化=ti-reference・ti-spec-view／統合提案=ループ内推論）で専用能力を持たない |
 | `references/mode-and-handoff.md` | onboarding モードの挙動軸・poc⇄onboarding の引き継ぎ（契約成立でのモード遷移・未判定既定）・ロール別の出し分け・段階導入と二層モデル |
+| `references/tsubaiso-inquiry.md` | TI とツバイソの役割分担（キックオフで合意する文面）・問いの区分（A〜C）・ツバイソ照会票の形式・ツバイソの側での扱い |
 
 ## 原則
 
