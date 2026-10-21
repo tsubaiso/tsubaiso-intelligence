@@ -1,8 +1,8 @@
 ---
 name: ti-poc
 description: 契約前の PoC・商談・社内検証で見込み客に「導入が簡単・速い」を体験させるトライアル体験スキル（契約前寄り）。TRIGGER when トライアル環境での価値実証、業務プロセスの可視化・理解、サンプルデータでの多軸集計デモ、少量の自社マスタや注文書・請求書を取り込む体験、デモ用サンプルデータの準備。DO NOT TRIGGER when 本番導入プロジェクトの工程進行は ti-onboarding、実装形態の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
-version: 0.5.0
-updated: 2026-08-31
+version: 0.5.1
+updated: 2026-10-15
 ---
 
 # ti-poc — PoC・商談（トライアル体験）
@@ -43,7 +43,7 @@ updated: 2026-08-31
 | **デモデータを投入し終えた瞬間（見せる前・指示を待たない）** | `references/demo-data-and-scenario.md §投入後の答え合わせ（見せる前の関門）`（機構は ti-data-load `references/import-errors.md §投入後の答え合わせ（3層・完了条件）`） | 正解表・L1〜L3 の結果・見せる画面に⚠️ が残っていないか |
 | 体験4の自社文書→取引作成が要る瞬間 | ti-update の該当 reference（レイアウト解析資産は ti-report 側） | 対象文書・意味定義マッピング |
 | トライアル構築で「どの実装形態で作るか」の判断が要る瞬間 | ti-lifecycle の該当 reference（Anonymous Apex はトライアル限定で可） | 要件の性質・破棄前提かどうか |
-| org へ書き込む直前（体験3のマスタ取込・体験4の取引作成） | ti-core `references/safety-gate.md` | 対象・承認ドラフト・dry-run→突合 |
+| org へ書き込む直前（体験3のマスタ取込・体験4の取引作成） | ti-reference `references/write-index.md` の書込前ゲート（`atlas_write_seam`）。レコードの書込なので、ti-core `references/safety-gate.md`（メタデータの書込専用）は使わない | 対象・判定結果・承認ドラフト・dry-run→突合 |
 | 現状仕様を往復で詰める瞬間（体験1の業務理解・Fit 確認） | ti-core `references/spec-roundtrip.md` | 現状仕様・買い手の業務説明 |
 | トライアルで繰り返し詰まる／ナレッジが不足した瞬間 | ti-core `references/feedback.md` | 匿名化した摩擦シグナル |
 | 一次解決で解けず利用者が未解決のまま／繰り返し詰まると判定した瞬間 | ti-core `references/support-escalation.md` | 本人の許可・再現手順（PII・業務データ本体・認証情報は載せない） |

@@ -1,8 +1,8 @@
 ---
 name: ti-lifecycle
 description: 顧客orgカスタマイズを「どの実装形態で・いつ作るか」で判断する開発運用ライフサイクル判断スキル。TRIGGER when 個別要件を宣言的（Flow/入力規則/数式/承認）・Apex・外部スクリプト・製品機能化のどれで実装するかの選択、Anonymous Apex で作ってよいか／運用フェーズへ移行してよいかの判断、着手前ゲートの適用。DO NOT TRIGGER when 導入プロジェクト全体の工程進行は ti-onboarding、契約前の体験演出は ti-poc、メタデータ配備の機構そのものは ti-metadata、個別レコードの申請前・承認前チェックは ti-update。
-version: 0.2.1
-updated: 2026-10-11
+version: 0.2.2
+updated: 2026-10-15
 ---
 
 # ti-lifecycle — 開発運用ライフサイクル判断
@@ -32,10 +32,11 @@ updated: 2026-10-11
 | Anonymous Apex で作ってよいか・運用へ移してよいか判断する瞬間 | `references/anonymous-apex-policy.md` | 現在のフェーズ・書込先org の種別 |
 | アジャイル構築の着手前（フェーズ判定・実装形態の確定） | `references/dev-phase-playbook.md` | 現在のフェーズ・要件の性質 |
 | 構築中に投入・複製・参照などの機構が要る瞬間 | 能力スキルの該当 reference（`dev-phase-playbook.md` が案内） | 適用対象・暫定/恒久の別 |
-| org へ書き込む直前 | ti-core `references/safety-gate.md` | 対象・承認ドラフト（判断層からの記録を残す場合は、この時点で記録ペイロードを下書き＝2段トリガの第1段） |
+| org へメタデータを書き込む直前 | ti-core `references/safety-gate.md`（メタデータの書込専用） | 対象・承認ドラフト（判断層からの記録を残す場合は、この時点で記録ペイロードを下書き＝2段トリガの第1段） |
+| org のレコードを作成・更新する直前 | ti-reference `references/write-index.md` の書込前ゲート（`atlas_write_seam`） | 対象オブジェクトAPI名・判定結果・承認ドラフト |
 | 現状仕様を往復で詰める瞬間 | ti-core `references/spec-roundtrip.md` | 実装形態の選択肢・前提 |
 | org へメタデータを配備し成功した直後 | ti-spec-view の overlay 記録プロトコル（スキル名参照） | 配備したカスタマイズの対象・実装意図・author（実際のビルド主体）・確信度（＝2段トリガの第2段） |
-| 実装形態が「外部スクリプト」で、AI 生成スクリプトが org へ書き込む | ti-core `references/safety-gate.md`（計画提示・ドライラン→人が承認）。機構は ti-local-automation | 対象・変更内容・本人権限内であること |
+| 実装形態が「外部スクリプト」で、AI 生成スクリプトが org へ書き込む | 計画提示・ドライラン→人が承認。メタデータの書込は ti-core `references/safety-gate.md`、レコードの書込は ti-reference `references/write-index.md` の書込前ゲートを通す。機構は ti-local-automation | 対象・変更内容・本人権限内であること |
 
 > 本文中の能力スキル名（ti-metadata・ti-reference・ti-core 等）は配置済みで、フォルダ名＝正準名として辿れる（ti-data-load は `tsubaiso-data-migration` からの改称先で、現在は配置済み）。配備成功直後の記録先 ti-spec-view はハードパスを張らずスキル名参照に留める（相手 references の物理構造に依存させない＝ダングリング回避）。本文が委譲する機構には未配置・未収録のものがありうる（書込前ゲートが `found:false` を返す等。書込前ゲートの実装範囲は `ti-reference references/write-index.md` が正本＝v12.1.0 で `function_only`・C5 参照フィルタ・auto_create 両方向を Atlas MCP `atlas_write_seam` に実装済み）。当該機構に当たったら機構を捏造せず人へ引き継ぐ（または ti-core Knowledge で代替する）。
 

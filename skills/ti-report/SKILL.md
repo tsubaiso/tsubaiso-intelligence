@@ -1,8 +1,8 @@
 ---
 name: ti-report
 description: 【ベータ】PSA/IMA顧客の帳票（見積・請求・注文・納品・検収 等）を自社レイアウト・項目へカスタマイズする能力スキル。TRIGGER when 帳票テンプレの新規作成・調整、データの流し込み、押印/DRAFT分岐の組み込み、帳票に出す項目の追加、帳票出力ボタン/描画面のorg配置、帳票の美観仕上げ、帳票項目マッピング設計書・カスタマイズ仕様書の出力と継続修正サイクル。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、文書→レコードの取込・入力支援は ti-update、導入プロジェクトの工程進行は ti-onboarding。
-version: 0.5.1
-updated: 2026-10-13
+version: 0.6.1
+updated: 2026-10-20
 ---
 
 # ti-report — 帳票カスタマイズ
@@ -36,7 +36,7 @@ PSA/IMA を使う顧客の帳票を、自社のレイアウト・項目に合わ
 | 現状仕様を往復で詰める瞬間（設計書→仕様書→指示→反映の往復） | ti-core `references/spec-roundtrip.md` | 変更の選択肢・前提 |
 | **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md` | 引きたい製品・機能と、利用者の言い方 |
 | org へメタデータを書き込む直前（項目追加・デプロイ） | ti-core `references/safety-gate.md` | 対象・承認ドラフト |
-| 生成PDFをレコードへ添付する直前／定時実行を設定する直前 | `references/deploy-and-fields.md` §安全ゲート | 添付先のレコード・ファイル名・版（押印あり／DRAFT）／定時実行の対象の条件・添付先・頻度・停止の方法 |
+| 生成PDFをレコードへ添付する直前／定時実行を設定する直前 | `references/deploy-and-fields.md` §安全ゲート | 添付先のレコード・ファイル名・版（押印あり／DRAFT）・同じ帳票かを判定するハッシュ値（算出方法は `references/template-and-mapping.md` §差し込んだデータのハッシュ値）／定時実行の対象の条件・添付先・頻度・停止の方法 |
 | 帳票機構の不足・ナレッジギャップに気づいた瞬間 | ti-core `references/feedback.md` | 不足の内容 |
 | 一次解決で解けず利用者が未解決のまま／繰り返し詰まると判定した瞬間 | ti-core `references/support-escalation.md` | 本人の許可・再現手順（PII・業務データ本体・認証情報は載せない） |
 
@@ -46,7 +46,7 @@ PSA/IMA を使う顧客の帳票を、自社のレイアウト・項目に合わ
 
 | reference | 何を定義するか |
 |---|---|
-| `references/template-and-mapping.md` | テンプレの差込DSL＋流し込み（プレビュー経路とorg描画経路の記法差・落とし穴）／意味定義マッピング／押印・DRAFT判定と定型帳票との棲み分け |
+| `references/template-and-mapping.md` | テンプレの差込DSL＋流し込み（プレビュー経路とorg描画経路の記法差・落とし穴）／意味定義マッピング／押印・DRAFT判定／差し込んだデータのハッシュ値の規約（二重添付の判定）／定型帳票との棲み分け |
 | `references/deploy-and-fields.md` | 帳票をレコードページに載せる中身の author（配備の実行は ti-metadata へ委譲）／カスタム項目追加の副フロー／反復調整／安全ゲート |
 | `references/report-design-cycle.md` | 帳票項目マッピング設計書・カスタマイズ仕様書の出力フォーマットと継続修正サイクル（カスタマイズのブラックボックス化解消） |
 | `references/report-aesthetics.md` | 美しい帳票の原則／Chromiumでの印刷の指定／日本向け・海外向けの様式差／道具と型は標準・あてはめは顧客ごと |

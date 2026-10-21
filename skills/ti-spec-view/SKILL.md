@@ -1,8 +1,8 @@
 ---
 name: ti-spec-view
 description: 【ベータ】PSA/IMA導入後に顧客がorgへ加えたカスタマイズ仕様を可視化し、ブラックボックス化を解消する能力スキル。TRIGGER when 顧客固有カスタマイズ（カスタムオブジェクト・項目・入力規則・フロー）の一覧化、標準との差分ハイライト、各カスタマイズの業務的意味の記述・訂正・確信度/鮮度の確認、当社・パートナーの許可つきカスタマイズ把握。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、レコードの作成・更新・入力支援は ti-update、実装形態の判断は ti-lifecycle、レコードを検索して数値を出すだけは ti-reference。
-version: 0.4.0
-updated: 2026-09-26
+version: 0.4.1
+updated: 2026-10-20
 ---
 
 # ti-spec-view — 仕様可視化
@@ -36,7 +36,8 @@ PSA/IMA を導入した顧客が org へ加えた**カスタマイズ仕様を�
 | 一覧・差分を出力する・鮮度を表示する・誤誘導を防ぐ・段階導入を判断する | `references/visualization-output.md` | 出力形態・鮮度状態・author帰属/確信度 |
 | 意味付けを共通化（昇格）する・当社/パートナーの閲覧経路・契約終了・判断層からの記録を扱う | `references/ip-governance.md` | 抽象化の可否・閲覧許可・記録の契機 |
 | 現状仕様を往復で詰める瞬間（意味付けを顧客と往復して確定・訂正する） | ti-core `references/spec-roundtrip.md` | 意味付けの選択肢・前提 |
-| org へ書き込む直前（意味層のupsert・確定層スナップショットの配備） | ti-core `references/safety-gate.md` | 対象・承認ドラフト |
+| org へメタデータを書き込む直前（確定層スナップショットの配備） | ti-core `references/safety-gate.md`（メタデータの書込専用。配備の機構は ti-metadata） | 対象・承認ドラフト |
+| 意味層（編集層）のレコードを upsert する直前 | 承認ドラフト提示→人が承認。編集層は PSA/IMA のオブジェクトではない独立のカスタムオブジェクトである。そのため ti-reference の書込前ゲート（`atlas_write_seam`）の判定の対象外で、ti-core `references/safety-gate.md`（メタデータの書込専用）も使わない（`references/overlay-model.md` の「書込前構造ゲートの射程」の段落） | 対象のカスタマイズ・書き込む意味付け・承認ドラフト |
 | 可視化機構の不足・ナレッジギャップに気づいた瞬間 | ti-core `references/feedback.md` | 不足の内容 |
 | 一次解決で解けず利用者が未解決のまま／繰り返し詰まると判定した瞬間 | ti-core `references/support-escalation.md` | 本人の許可・再現手順（PII・業務データ本体・認証情報は載せない） |
 

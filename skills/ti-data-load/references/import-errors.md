@@ -54,3 +54,9 @@
 - 受注データのインポート方法: https://support.tsubaiso.jp/hc/ja/articles/14096284759065
 - 取引先、取引先関連情報、取引先責任者のインポート方法: https://support.tsubaiso.jp/hc/ja/articles/14201579838361
 - データインポート時によく発生するエラーと対処方法: https://support.tsubaiso.jp/hc/ja/community/posts/5624153141529
+
+### 参照（一次情報・Salesforce のドキュメント）
+
+- 添付ファイル（ContentVersion）を作るときのサイズの上限（マルチパートは1ファイル2GBまで・base64でエンコードして本文に含める方式は37.5MBまで）: Salesforce REST API Developer Guide「Insert or Update Blob Data」 https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_insert_update_blob.htm （移行の手順は `migration-principles.md §添付ファイルを移す`）
+- ファイルとレコードの紐付け（ContentDocumentLink）の公開範囲（`Visibility` の値 `AllUsers`・`InternalUsers`・`SharedUsers`）と照会の条件の制約（`ContentDocumentId` か `LinkedEntityId` の条件が無いと照会できない。API 59.0以降は、権限 Query All Files（有効にするには View All Data が必要）があれば条件なしで照会できる）: Object Reference for the Salesforce Platform「ContentDocumentLink」 https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_contentdocumentlink.htm
+- ファイル（ContentVersion）の紐付け先（`FirstPublishLocationId`。作成時に指定できる）とサイズ（`ContentSize` は2GB未満のファイルのバイト数。API 66.0以降は10GBまで扱える `ContentSizeLong` の使用が推奨されている）: Object Reference for the Salesforce Platform「ContentVersion」 https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_contentversion.htm

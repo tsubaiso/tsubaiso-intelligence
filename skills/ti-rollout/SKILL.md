@@ -1,8 +1,8 @@
 ---
 name: ti-rollout
 description: Tsubaiso Intelligence を顧客環境で使い始めるための接続・環境セットアップを進めるスキル。TRIGGER when 接続・環境セットアップ・MCP/コネクタ結線・カスタムコネクタ登録・Salesforce(PSA/IMA)標準MCP接続・外部クライアントアプリ作成・接続キー取得・初期セットアップ。DO NOT TRIGGER when 導入プロジェクトの工程進行・計画立案・Fit&Gap/設計の段取り=ti-onboarding、契約前の価値実証・トライアル体験=ti-poc、データ移行の実行=ti-data-load、MCP に無い任意 API 操作のローカル実行=ti-local-automation、メタデータ＝カスタマイズ定義の生成・デプロイ=ti-metadata。「TIを導入したい」は接続・環境セットアップの局面のみ本スキルが担い、工程進行・計画は ti-onboarding へ寄せる。
-version: 0.21.2
-updated: 2026-10-12
+version: 0.21.3
+updated: 2026-10-20
 ---
 
 # ti-rollout — 導入ロールアウト（接続・環境セットアップの進行）
@@ -174,7 +174,8 @@ TI は特定 AI クライアントに固定しない。**Claude は参照実装�
 |---|---|
 | **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md`（同梱の版と公開されている最新版を照合） |
 | **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md`（推測で挙動を組み立てず、ナレッジを引く） |
-| org へ書き込む直前（アプリのデプロイ・設定反映・投入） | ti-core `references/safety-gate.md`（承認ドラフト提示→人が承認） |
+| org へメタデータを書き込む直前（アプリのデプロイ・設定反映） | ti-core `references/safety-gate.md`（メタデータの書込専用。承認ドラフト提示→人が承認） |
+| org のレコードを作成・更新する直前（データの投入） | ti-reference `references/write-index.md` の書込前ゲート（`atlas_write_seam`。承認ドラフト提示→人が承認） |
 | 手順・対象を往復で詰める瞬間 | ti-core `references/spec-roundtrip.md` |
 | データ構造マップ・参照が要る瞬間 | ti-reference |
 | メタデータ（接続用アプリ含む）生成・デプロイ | ti-metadata |

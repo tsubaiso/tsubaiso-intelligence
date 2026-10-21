@@ -45,7 +45,8 @@ ti-update は「稼働後のデータ（トランザクション＋マスタ）�
 | チェックポイント | 読む | 目的 |
 |---|---|---|
 | 現状仕様を往復で詰める瞬間（突合結果の提示・点検助言の往復） | ti-core `references/spec-roundtrip.md` | 人間判断を仰ぐ往復 |
-| org書込直前（作成・トリガ項目更新・マスタ書込） | ti-core `references/safety-gate.md` | ドラフト提示＋明示承認＋PIIマスキング。入力支援は必ず通す。承認支援は読み取りで書かない |
+| レコードの書込直前（作成・トリガ項目更新・マスタ書込） | ti-reference `references/write-index.md` の書込前ゲート（`atlas_write_seam`） | 対象オブジェクトの判定＋ドラフト提示＋明示承認。入力支援は必ず通す。承認支援は読み取りで書かない。ファイル（ContentVersion・ContentDocumentLink）はPSA/IMAのオブジェクトではないため、ファイルの添付は判定の対象外 |
+| メタデータの書込直前（デプロイ・カスタム項目追加・本番反映） | ti-core `references/safety-gate.md`（メタデータの書込専用） | ドラフト提示＋明示承認＋PIIマスキング |
 | 段階拡張の穴・本命経路が使えないこと・意味定義の不足に気づいた瞬間 | ti-core `references/feedback.md` | ナレッジギャップの記録 |
 
 > 本文の能力スキル名（ti-reference・ti-metadata・ti-core・ti-data-load 等）は配置済みで、フォルダ名＝正準名として辿れる（ti-data-load は `tsubaiso-data-migration` からの改称先）。

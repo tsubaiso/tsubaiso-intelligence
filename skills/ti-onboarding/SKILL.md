@@ -1,8 +1,8 @@
 ---
 name: ti-onboarding
 description: 【ベータ】本番導入プロジェクトを工程進行・段取りする導入支援スキル（PSA/ERP導入・契約後寄り）。TRIGGER when 導入計画の立案・タスク分解、Fit&Gap や重要マスタ設計の工程進行、7工程（計画・管理／設計／制作／構築・設定／データ移行／教育／運用テスト）の現在地把握と次工程の段取り、Sandbox→本番への着地支援、必要な業務領域から順に立ち上げる部分導入の段取り、稼働後に新しい業務・新しい商品/サービスの事業が加わったときの業務プロセス・登録方式・マスタ設計の検討、要件定義でツバイソへの確認事項（ツバイソ照会票・「ツバイソ社確認」）を作る・受け取るとき。DO NOT TRIGGER when 契約前の価値実証は ti-poc、個別要件の実装形態や Anonymous Apex 可否・運用移行の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
-version: 0.8.0
-updated: 2026-10-15
+version: 0.8.1
+updated: 2026-10-20
 ---
 
 # ti-onboarding — 導入支援（工程進行）
@@ -69,7 +69,8 @@ updated: 2026-10-15
 | 運用テスト工程で入力支援・申請前/承認前チェックが要る瞬間 | ti-update の該当 reference | 対象レコード・チェック観点 |
 | 据え置いた領域と ERP のあいだでデータを受け渡す瞬間 | ti-update `references/external-handover.md` | 向き（外→ERP／ERP→外）・出所・時点・持ち出しの範囲 |
 | 制作・構築工程で「どの実装形態で作るか」の判断が要る瞬間 | ti-lifecycle の該当 reference | 要件の性質・継続保守の主体 |
-| org へ書き込む直前（制作・構築・データ移行・運用テスト） | ti-core `references/safety-gate.md` | 対象・承認ドラフト |
+| org へメタデータを書き込む直前（制作・構築のデプロイ・カスタム項目追加） | ti-core `references/safety-gate.md`（メタデータの書込専用） | 対象・承認ドラフト |
+| org のレコードを作成・更新する直前（データ移行・運用テスト・マスタ投入） | ti-reference `references/write-index.md` の書込前ゲート（`atlas_write_seam`） | 対象オブジェクトAPI名・判定結果・承認ドラフト |
 | 現状仕様を往復で詰める瞬間（Fit&Gap・マスタ設計の確定） | ti-core `references/spec-roundtrip.md` | 現状仕様・変更指示 |
 | 工程で繰り返し詰まる／ナレッジが不足した瞬間 | ti-core `references/feedback.md` | 匿名化した摩擦シグナル |
 | 一次解決で解けず利用者が未解決のまま／繰り返し詰まると判定した瞬間 | ti-core `references/support-escalation.md` | 本人の許可・再現手順（PII・業務データ本体・認証情報は載せない） |
