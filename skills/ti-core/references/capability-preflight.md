@@ -45,6 +45,22 @@ updated: 2026-10-21
 > - **実証コマンド**: `dispatch_readonly` で `GET /services/data/v64.0/actions/custom/flow`（403 が返る）と `GET /services/data/v64.0/actions/custom/apex`（200 が返る）を呼ぶ。実行は、検証組織に確認用のレコードを1件作り、`dispatch` で `POST /services/data/v64.0/actions/standard/submit` と、Apex のカスタムアクション `POST /services/data/v64.0/actions/custom/apex/{アクション名}` をそれぞれ呼ぶ（返るのは 403 の遮断ではなく、Salesforce の検査のエラーか成功）。作ったレコードは削除する。承認者が、レコードの担当者に設定した社員のユーザーと同じときは、申請の直後に自動で承認済になる（承認履歴のコメントは「割り当て先のユーザがレコード担当者と同一であるため自動承認しました」）。承認済になったレコードは製品の承認のロックで削除できないため、ロックを解除してから削除する。承認待ちのレコードを削除できるかは確かめていない
 > - **再実証**: Headless 360 を前提にした設計判断を書くとき
 
+## 書き込みの `dispatch` に `userType` を付けない [REQUIRED]
+
+**Headless 360 の `dispatch` で作成・更新・削除するときは、`userType` を指定しない（指定するなら `builder`）。** ツールの説明は `userType` を参考情報としつつ、`discover` の説明は業務の操作なら `business` を付けるよう促す。しかし `business` を付けると、書き込みが Salesforce の画面（Lightning）と同じ制約で検査される。
+
+- ページレイアウト（または Dynamic Forms）で必須の項目が無いと拒否される（`REQUIRED_FIELD_MISSING`「These fields are required in the Lightning UI」。例: ToDoの割り当て先・優先度）
+- ページレイアウトで参照のみの項目に値を入れると拒否される（「is read-only in the Lightning UI」）
+- 自由入力できる選択リスト（ToDoの件名など）に、選択肢に無い値を入れると拒否される（`INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`）
+- 画面から作らないオブジェクト（メール記録）は作成できない（`FUNCTIONALITY_NOT_ENABLED`「insert is not supported for entity type 'EmailMessage'」）
+
+**これらのエラーを組織の設定や権限の問題として扱わない。** `userType` を外して同じ呼び出しをやり直す。外しても同じエラーなら、組織側の検査として扱う。参照（`dispatch_readonly`）は対象外。Claude Code では、プラグインのフック（`scripts/dispatch_usertype_guard.py`）が `business` 付きの書き込みを送る前に止め、外してやり直すよう返す。
+
+> - **依存事実**: Headless 360 の `dispatch` が `userType: business` のときだけ画面と同じ制約で書き込みを検査し、指定なし・`builder` では REST API と同じ扱いになること（Salesforce 側の実装で告知なく変わりうる。利用者の報告では、2026-10-20 までは同じ書き込みが通っていた）
+> - **実証日**: 2026-10-22（検証組織。本番の組織でも同じエラーを利用者の報告で確認）
+> - **実証コマンド**: 検証組織で `dispatch` に `POST /services/data/v66.0/sobjects/Task`（本文 `{"Subject": "確認用", "WhoId": "{取引先責任者のId}", "Status": "Completed"}`）を `userType: business` 付きと指定なしで1回ずつ送る（付きは 400、指定なしは 201）。`POST /services/data/v66.0/sobjects/EmailMessage` も同様に送り分ける。作ったレコードは削除する
+> - **再実証**: Headless 360 を前提にした設計判断を書くとき
+
 ## 経路の選び方（器がそろっているとき）
 
 器はそろっていて、**同じ対象へ届く経路が複数ある**ときは、次の順で選ぶ。**判断の起点は「どの道具が手近か」ではなく「その対象を保有しているのはどのシステムか。そのシステムに対して権限を持つ経路は何か」。**

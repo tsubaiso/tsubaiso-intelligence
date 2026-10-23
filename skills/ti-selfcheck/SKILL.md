@@ -5,7 +5,7 @@ version: 0.3.2
 updated: 2026-10-10
 ---
 
-<!-- plugin-version: 0.61.1 -->
+<!-- plugin-version: 0.62.0 -->
 
 # ti-selfcheck — TIの接続とスキルを点検する
 

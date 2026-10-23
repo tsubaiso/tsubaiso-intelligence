@@ -1,8 +1,8 @@
 ---
 name: ti-poc
 description: 契約前の PoC・商談・社内検証で見込み客に「導入が簡単・速い」を体験させるトライアル体験スキル（契約前寄り）。TRIGGER when トライアル環境での価値実証、業務プロセスの可視化・理解、サンプルデータでの多軸集計デモ、少量の自社マスタや注文書・請求書を取り込む体験、デモ用サンプルデータの準備。DO NOT TRIGGER when 本番導入プロジェクトの工程進行は ti-onboarding、実装形態の判断は ti-lifecycle、単一の能力で完結する作業は層2スキル（ti-reference 等）。
-version: 0.5.1
-updated: 2026-10-15
+version: 0.5.2
+updated: 2026-10-22
 ---
 
 # ti-poc — PoC・商談（トライアル体験）

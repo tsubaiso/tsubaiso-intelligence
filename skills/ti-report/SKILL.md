@@ -1,8 +1,8 @@
 ---
 name: ti-report
 description: 【ベータ】PSA/IMA顧客の帳票（見積・請求・注文・納品・検収 等）を自社レイアウト・項目へカスタマイズする能力スキル。TRIGGER when 帳票テンプレの新規作成・調整、データの流し込み、押印/DRAFT分岐の組み込み、帳票に出す項目の追加、帳票出力ボタン/描画面のorg配置、帳票の美観仕上げ、帳票項目マッピング設計書・カスタマイズ仕様書の出力と継続修正サイクル。DO NOT TRIGGER when メタデータ配備の機構そのものは ti-metadata、文書→レコードの取込・入力支援は ti-update、導入プロジェクトの工程進行は ti-onboarding。
-version: 0.6.1
-updated: 2026-10-20
+version: 0.6.2
+updated: 2026-10-22
 ---
 
 # ti-report — 帳票カスタマイズ

@@ -40,4 +40,4 @@
 
 - 書き方・失敗を握りつぶさない・顧客レシピ → `ti-local-automation`
 - 大量の業務データ投入・移行の型 → `ti-data-load`
-- org へ書き込む直前 → `safety-gate.md`（スクリプトでも承認ゲートは同じ）
+- org へ書き込む直前 → メタデータは `safety-gate.md`、レコードは ti-reference `references/write-index.md` の書込前ゲート（`atlas_write_seam`）（スクリプトでも承認ゲートは同じ）
