@@ -12,6 +12,8 @@ Tsubaiso Intelligence（サービス）の**配布スキルパッケージ（プ
 - Tsubaiso Atlas MCP サーバー（意味・ルール・定番レシピ）
 - Tsubaiso Knowledge MCP サーバー（製品の仕様・操作手順）
 
+本パッケージは、Tsubaiso Atlas MCP サーバーと Tsubaiso Knowledge MCP サーバーの2つのコネクタ（`tsubaiso-atlas`・`tsubaiso-knowledge`）を同梱する。Claude のプラグインとして追加すると、この2つのコネクタが Claude に表示される。コネクタを接続するときは、Tsubaiso Intelligence にサインインする。組織ごとに接続先の URL が異なるため、ツバイソPSA/IMA の組織へのコネクタは同梱しない。
+
 Atlas と Knowledge から取得できる範囲は、サーバーが利用者本人の資格で判定する。AI クライアント側に、取得範囲を設定する項目は無い。
 
 本パッケージは書込前の警告フックを同梱する。Claude Code と Claude Agent SDK では、Bash と MCP の `dispatch` のすべての呼び出しの前に判定が走り、ツバイソPSA/IMA のレコードを作る呼び出しにだけ案内を出す。呼び出しは止めない（詳細は `skills/ti-core/references/safety-gate.md`）。

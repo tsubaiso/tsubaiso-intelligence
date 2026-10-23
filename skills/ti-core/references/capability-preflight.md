@@ -33,16 +33,32 @@ updated: 2026-10-21
 
 ## 遮断が確認されている呼び出し先
 
-**Headless 360 の `dispatch`／`dispatch_readonly` は、フローのカスタムアクション（`/services/data/vXX.0/actions/custom/flow` 配下）だけを遮断する。** 403 と「This endpoint is not permitted via dispatch and must not be retried」が返る。同じ組織・同じユーザーでも、REST を直接呼ぶ経路（ローカル実行）では同じパスが 200 で返る。**遮断の原因は組織の権限ではなく、`dispatch` の仕様である**。同じ `actions/custom/` 配下でも、Apex のカスタムアクション（`apex`）・クイックアクション（`quickAction`）と、標準アクション（`/actions/standard`）の一覧取得は 200 で返る。
+**Headless 360 の `dispatch`／`dispatch_readonly` は、フローのカスタムアクション（`/services/data/vXX.0/actions/custom/flow` 配下）と、サブリクエストをまとめて送る `POST /services/data/vXX.0/composite` を遮断する。** どちらも 403 と「This endpoint is not permitted via dispatch and must not be retried」が返る。フローのカスタムアクションは、同じ組織・同じユーザーでも、REST を直接呼ぶ経路（ローカル実行）では同じパスが 200 で返る。**遮断の原因は組織の権限ではなく、`dispatch` の仕様である**。同じ `actions/custom/` 配下でも、Apex のカスタムアクション（`apex`）・クイックアクション（`quickAction`）と、標準アクション（`/actions/standard`）の一覧取得は 200 で返る。
 
+- **サブリクエストの束（`/composite`）は使わない。** 束の中身が参照だけでも遮断される。一括の作成・更新は sObject Collections（`/composite/sobjects`。外部IDで突き合わせるなら `PATCH /composite/sobjects/{オブジェクト}/{外部ID項目}` の upsert）で送る。`/composite/sobjects` は、参照（`GET`）が 200 で返ることを確かめた。作成（`POST`）・更新（`PATCH`）・upsert が遮断されないかは確かめていない。403 と上の文面が返ったら遮断として扱い、ローカル実行（ti-local-automation）へ回す。`GET /composite` は使える束の種類の一覧を 200 で返すが、`POST /composite` を実行できることは意味しない。`/composite/batch`・`/composite/tree`・`/composite/graph` が遮断されるかも確かめていない
 - **フローのカスタムアクションは、Headless 360 経由では実行できない。** §作法の1（確かめる）で、この呼び出し先を利用可能な経路に含めない。ローカル実行（ti-local-automation）か、同じ処理を持つ Apex のカスタムアクションがあるかを先に探す
 - **403 を権限の問題として記録しない。** 権限による拒否か経路の遮断かは、**同じ対象を2つの経路で呼び出し、結果を比較して初めて判別できる**。片方の経路で拒否されただけで、権限セットの追加を提案しない
 - 一覧が返ることと、実行（POST）が成功することは別。**Apex のカスタムアクションと標準アクションの実行は `dispatch` で遮断されない**（`dispatch` を通った呼び出しは Salesforce まで届き、成否は業務の検査や承認プロセスの入口条件で決まる）。失敗したときは、返ったエラーの文面で原因を判断し、遮断として扱わない。業務の検査を通る入力（承認申請の標準アクションは、承認プロセスの入口条件も満たす入力）なら、実行は成功する（明細エディタの公開アクションは見積明細などの明細を作成し、承認申請の標準アクションは承認プロセスを開始する）
 - **承認申請の標準アクションは、承認プロセスを直接開始する。** 製品の承認申請の画面から申請したときと同じ結果になるかは確かめていない。承認申請の代行は ti-update `references/approval-execution.md` の起動口と自己診断に従い、この標準アクションを起動口の代わりの経路として使わない
 
-> - **依存事実**: Headless 360 の `dispatch` がフローのカスタムアクションの一覧取得を遮断し、Apex・クイックアクション・標準アクションの一覧取得と、Apex・標準アクションの実行（POST）は許可すること（Salesforce 側の実装で告知なく変わりうる）
-> - **実証日**: 2026-10-21（実行の成功を確認。検査でエラーが返る実行の確認は 2026-10-17、一覧取得は 2026-09-30、初回 2026-09-19。検証組織）
-> - **実証コマンド**: `dispatch_readonly` で `GET /services/data/v64.0/actions/custom/flow`（403 が返る）と `GET /services/data/v64.0/actions/custom/apex`（200 が返る）を呼ぶ。実行は、検証組織に確認用のレコードを1件作り、`dispatch` で `POST /services/data/v64.0/actions/standard/submit` と、Apex のカスタムアクション `POST /services/data/v64.0/actions/custom/apex/{アクション名}` をそれぞれ呼ぶ（返るのは 403 の遮断ではなく、Salesforce の検査のエラーか成功）。作ったレコードは削除する。承認者が、レコードの担当者に設定した社員のユーザーと同じときは、申請の直後に自動で承認済になる（承認履歴のコメントは「割り当て先のユーザがレコード担当者と同一であるため自動承認しました」）。承認済になったレコードは製品の承認のロックで削除できないため、ロックを解除してから削除する。承認待ちのレコードを削除できるかは確かめていない
+> - **依存事実**: Headless 360 の `dispatch` がフローのカスタムアクションの一覧取得と `POST /composite` を遮断し、Apex・クイックアクション・標準アクションの一覧取得と、Apex・標準アクションの実行（POST）と、sObject Collections（`/composite/sobjects`）の参照（`GET`）は許可すること。sObject Collections の作成・更新・upsert と、`/composite/batch`・`/composite/tree`・`/composite/graph` は未確認（Salesforce 側の実装で告知なく変わりうる）
+> - **実証日**: 2026-10-23（`/composite` の遮断と `/composite/sobjects` の参照。実行の成功の確認は 2026-10-21、検査でエラーが返る実行の確認は 2026-10-17、一覧取得は 2026-09-30、初回 2026-09-19。検証組織）
+> - **実証コマンド**: `dispatch_readonly` で `GET /services/data/v64.0/actions/custom/flow`（403 が返る）と `GET /services/data/v64.0/actions/custom/apex`（200 が返る）を呼ぶ。`dispatch` で `POST /services/data/v66.0/composite` に参照1件だけの束（本文 `{"compositeRequest": [{"method": "GET", "url": "/services/data/v66.0/sobjects/Account/{Id}?fields=Id,Name", "referenceId": "r1"}]}`）を送り（403 が返る）、`dispatch_readonly` で `GET /services/data/v66.0/composite/sobjects/Account`（`queryParams` に `ids` と `fields`）を呼ぶ（200 が返る）。実行は、検証組織に確認用のレコードを1件作り、`dispatch` で `POST /services/data/v64.0/actions/standard/submit` と、Apex のカスタムアクション `POST /services/data/v64.0/actions/custom/apex/{アクション名}` をそれぞれ呼ぶ（返るのは 403 の遮断ではなく、Salesforce の検査のエラーか成功）。作ったレコードは削除する。承認者が、レコードの担当者に設定した社員のユーザーと同じときは、申請の直後に自動で承認済になる（承認履歴のコメントは「割り当て先のユーザがレコード担当者と同一であるため自動承認しました」）。承認済になったレコードは製品の承認のロックで削除できないため、ロックを解除してから削除する。承認待ちのレコードを削除できるかは確かめていない
+> - **再実証**: Headless 360 を前提にした設計判断を書くとき
+
+## 参照の条件の渡し方（`queryParams` と日本語） [REQUIRED]
+
+**Headless 360 の `dispatch_readonly` では、`queryParams` の値に日本語（英数字と記号以外の文字）を入れると、400（本文 "Bad Request"）が返る。** SOQL の `GET /services/data/vXX.0/query` の `q` だけでなく、`GET /services/data/vXX.0/parameterizedSearch` の `q` でも同じになる。英数字と記号だけの条件は通る。取引先名・社員名で引こうとすると、最初の照会で止まる。
+
+- **問い合わせの文字列は `queryParams` で渡す。** `url` に `?` から後ろを書くと、ツールが呼び出しの前に拒否する（400・「'url' must not contain an inline query string」）
+- **日本語をあらかじめパーセントエンコードして渡さない。** 二重にエンコードされて、エラーにならずに0件が返る。この0件を「該当なし」と読まない
+- **日本語の名前で引くときは、`dispatch` で `POST /services/data/vXX.0/parameterizedSearch` を使い、検索語を本文に入れる**（例: 本文 `{"q": "{検索語}", "sobjects": [{"name": "Account", "fields": ["Id", "Name"]}], "in": "NAME"}`）。本文の日本語は通る。POST だが参照で、組織のデータは変えない（`dispatch_readonly` は GET しか送れないため `dispatch` を使う）。全文検索なので、SOQL の `LIKE` の部分一致とは当たり方が違う。返った名前を手元で確かめてから使う。**全文検索はレコードそのものでなく検索の索引を引く**（Salesforce 公式の SOSL の説明）。投入・更新した直後に0件が返っても「該当なし」と読まず、Id か外部IDを条件にした SOQL で確かめ直す（索引へ反映されるまでの時間は確かめていない）
+- **件数の少ないマスタは、英数字だけの条件（区分・フラグ・Id 等）で一覧を取り、名前は手元で突き合わせてもよい**
+- **この 400 を組織の設定や権限の問題として扱わない。** 同じ照会を英数字だけの条件で送り直せば、経路の問題かどうかを切り分けられる
+
+> - **依存事実**: Headless 360 の `dispatch_readonly` が `queryParams` の値の日本語で 400 を返し、エンコード済みの値を二重にエンコードし、`dispatch` の POST の本文の日本語は通すこと（Salesforce 側の実装で告知なく変わりうる）
+> - **実証日**: 2026-10-23（検証組織。二重のエンコードで0件になることは 2026-10-22 の観測）
+> - **実証コマンド**: `dispatch_readonly` で `GET /services/data/v66.0/query`（`queryParams` の `q` に `SELECT Id, Name FROM Account WHERE Name LIKE '%株式会社%' LIMIT 3`）を呼び（400）、英字の条件に変えて呼ぶ（200）。`GET /services/data/v66.0/parameterizedSearch`（`queryParams` の `q` に日本語）も 400。`dispatch` で `POST /services/data/v66.0/parameterizedSearch`（本文の `q` に日本語）を送る（200 で該当の取引先が返る）
 > - **再実証**: Headless 360 を前提にした設計判断を書くとき
 
 ## 書き込みの `dispatch` に `userType` を付けない [REQUIRED]
