@@ -1,8 +1,8 @@
 ---
 name: ti-core
 description: '【TI共通規律・スキルを起動していなくても従うこと】(1) TIのMCPツール（atlas_* / isoppy_* 等）をこのセッションで最初に呼ぶ前に、該当するドメインスキルを1本起動する（可否・仕様=ti-howto／参照・集計=ti-reference／画面の場所=ti-navigate／登録・更新=ti-update／カスタマイズ=ti-metadata／接続・環境=ti-rollout、点検・不調=ti-selfcheck）。(2) 利用者へ見せる文章とファイルに内部識別子（tb_PSA__… tb_IMA__… の項目・オブジェクト名、xx_y_Zzz 形式のレシピ名、選択リストの符号値）を書かない＝業務の言葉だけで書く。(3) 引けなかったことは「未確認」と書き、引いた結果のように書かない。(4) Salesforceの接続の dispatch で作成・更新・削除するときは userType を付けない（business を付けると画面のページレイアウトの制約で検査され、件名などの自由入力やメール記録の作成が拒否される）。 各ドメインスキルが共通して呼ぶ横断基盤で、各ドメインスキルが、本文の発火点の表にある時点で該当するreferenceを読む。'
-version: 0.25.0
-updated: 2026-10-23
+version: 0.26.0
+updated: 2026-10-25
 ---
 
 # ti-core — Tsubaiso Intelligence スキル共通基盤
@@ -58,6 +58,7 @@ P1（現バージョン）が提供するのは次の 9 機能と、仕事の作
 | 同じ依頼が繰り返し来た／大量件数の処理を頼まれた／「使えないので画面から操作する」と書こうとした瞬間 | `references/automation-decision.md` | 依頼の反復性・件数・手順の確定度 |
 | 発火点を新設・改訂しようとした／「あの手順を踏んでいないのでは」と疑った瞬間 | `references/firing-observation.md` | 疑っている発火点と、見たい期間 |
 | 要望が標準機能では満たせないと分かった／カスタマイズの設計を始める／Fit&Gap で Gap の対応方針を書く瞬間 | `references/customization-proposal.md` | 利用者の要望（業務の対象と機能の呼び名） |
+| **顧客が追加したメタデータの意味、またはツバイソのパッケージ・標準の項目をこの組織でどう使っているかを応答に使う瞬間**／新しく作成するメタデータの説明欄を書く瞬間／利用者が会話でカスタマイズの意味を述べた瞬間／確認一覧を作る・回答を受け取る瞬間 | `references/customization-meaning.md` | 対象のメタデータ・作業フォルダの有無 |
 
 ## reference 索引
 
@@ -66,7 +67,7 @@ P1（現バージョン）が提供するのは次の 9 機能と、仕事の作
 | `references/output-discipline.md` | 利用者向け出力の規律。業務言語だけで書く規律と、レコードのリンク化（対象・書式・組織のホスト名の解決・省いてよい場面と省いたときの明示）。**この規律の実体はここ1箇所で、各ドメインスキルは書き写さず参照する** |
 | `references/version-freshness.md` | 版の鮮度の自己診断。同梱の版と公開されている最新版を照合し、古ければ本題の前に 1 行告げる。取得元 URL の形とキャッシュ回避・告げ方・管理者へ渡す文面・判定不能時は黙って進む規律 |
 | `references/spec-roundtrip.md` | 仕様往復プロトコル。安定 ID 付き行の標準スキーマ・変更語彙・既定 Excel エクスポート・行 ID 突合と反映のサイクル |
-| `references/safety-gate.md` | org 書込前の安全ゲート。checkonly 先行・承認ゲート・本番カバレッジ要件・PII マスキング。スキルが読まれなくても出る**書込前の警告フック**（`scripts/write_gate_notice.py`・止めずに案内だけ・Claude Code と Claude Agent SDK でだけ動く）の射程 |
+| `references/safety-gate.md` | org へメタデータを書き込む前の安全ゲート（レコードの書込は ti-reference `references/write-index.md`）。checkonly 先行・承認ゲート・本番カバレッジ要件・PII マスキング。スキルが読まれなくても出る**書込前の警告フック**（`scripts/write_gate_notice.py`・止めずに案内だけ・Claude Code と Claude Agent SDK でだけ動く）の射程 |
 | `references/capability-preflight.md` | 前提の自己診断と提案。実行前に器の有無を確かめ、足りなければ業務の言葉で伝えて埋める提案を出し、許可を得てから用意する 4 段の作法。**器がそろっているときの経路の選び方**（対象を保有しているシステムの専用経路が第1位・ブラウザや画面操作は最後・汎用の取得の失敗は経路不在の証拠にならない）。**接続先の組織を確認してから操作を始める**手順と、**遮断が確認されている呼び出し先**（Headless 360 の `dispatch` はフローのカスタムアクションと `POST /composite` を遮断する）と、**参照の条件の渡し方**（`queryParams` に日本語を入れると 400・日本語の名前は `POST parameterizedSearch` で引く） |
 | `references/knowledge-lookup.md` | 製品知識の引き当て。推測で挙動を組み立てない規律・意味定義（Atlas）との守備範囲の切り分け・未接続時のふるまい・キーワード指向の検索が届かないときの立て直し・引けなかったものの起票 |
 | `references/feedback.md` | スキル摩擦／ナレッジギャップのフィードバックイベントスキーマ・発火点・P1 ローカルスタブ |
@@ -76,6 +77,7 @@ P1（現バージョン）が提供するのは次の 9 機能と、仕事の作
 | `references/firing-observation.md` | 先行手順を踏んだかをセッション記録から事後に数える。機械化できる発火の境界（トリガ事象→必須事象〔既定は先行、`order: after` で後続〕・内容への従属は判定できない）・宣言の書き方・読み方・利用者のデータの扱い。**観測は任意で、記録へ到達できない環境では「未判定」を返す**。実体は `scripts/check_firing.py` と `firing_points.yml` |
 | `references/automation-decision.md` | 定型作業をスクリプトへ寄せる判断。反復・件数・確定度・回収可能性の軸、経路が「無い」ときは代替へ跳ぶ前に開ける手を探す規律、促し方。書き方は `ti-local-automation` |
 | `references/beta-status.md` | ベータとして先行提供している機能の扱い。ベータの定義（何が保証され何が保証されないか）・表示の3層（本文／`description` 先頭／`README`）・独自 frontmatter キーを足さない規律・正式提供への切り替え手順 |
+| `references/customization-meaning.md` | 顧客カスタマイズの意味付け。説明欄・ヘルプテキストの取得経路と、読んだ本文の扱い（書き手・確信度・食い違い・読めないとき）、AIが説明欄に付ける属性行、確認一覧（置き場と形式・載せる対象・全件の作成・回答の受け取り・組織の意味付けとして扱わない規則）。いまは意味付けの型を読み書きしない段階（Phase 1）で、型の詳細設計を受けて改訂する。**ti-reference・ti-update・ti-spec-view・ti-metadataは書き写さずに参照する** |
 | `references/customization-proposal.md` | カスタマイズの提案。標準機能で満たせない要望に、当社の要件一覧の回答（TI で対応する案）をナレッジから引いて示す。引き方・範囲の確かめ方・示し方（組織に保持されること・ライセンスで使える範囲の確認）・案が無いときの対応 |
 
 ## 使い方の原則
