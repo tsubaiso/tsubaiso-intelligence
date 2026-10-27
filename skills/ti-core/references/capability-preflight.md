@@ -1,6 +1,6 @@
 ---
 title: ti-core — 前提の自己診断と提案（capability-preflight）
-updated: 2026-10-21
+updated: 2026-10-23
 ---
 
 # 前提の自己診断と提案（capability-preflight）

@@ -32,11 +32,11 @@
 | 項目 | 通常のSOQLで `FieldDefinition` の `Description`（オブジェクトのAPI名で絞り、1つのオブジェクトにつき1回の照会で読む） | オブジェクトのdescribeが返す `inlineHelpText` |
 | オブジェクト | Tooling APIの `CustomObject` の `Description` | — |
 | 入力規則 | Tooling APIの `ValidationRule` の `Description` | — |
-| フロー | Tooling APIの `Flow` の `Description`。有効なバージョン（無ければ最新のバージョン）を読む | — |
+| フロー | Tooling APIの `Flow` の `Description`。有効なバージョン（無ければ最新のバージョン）の説明欄を読む。どのバージョンかはTooling APIの`FlowDefinition`の`ActiveVersionId`（空なら`LatestVersionId`）が指す | — |
 
-> - **依存事実**: 上表の4経路で説明欄（`Description`）を取得できること
-> - **実証日**: 2026-10-25（検証組織で4経路ともエラーなく照会でき、項目とオブジェクトは本文が返ることを確認）
-> - **実証コマンド**: `sf data query -o {組織} -q "SELECT QualifiedApiName, Description FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = '{オブジェクト}'"`、Tooling APIは同じコマンドに `-t` を付け、`SELECT DeveloperName, Description FROM CustomObject`／`SELECT ValidationName, Description FROM ValidationRule`／`SELECT Definition.DeveloperName, Status, Description FROM Flow WHERE Status = 'Active'`
+> - **依存事実**: 上表の4経路で説明欄（`Description`）を取得できること。有効なバージョンの無いフローでは`FlowDefinition`の`ActiveVersionId`が空で、`LatestVersionId`が最新のバージョンを指すこと
+> - **実証日**: 2026-10-26（検証組織で4経路ともエラーなく照会できることを確認。有効なバージョンの無いフローで`LatestVersionId`が下書きの最新のバージョンを指し、そのIdで`Flow`を照会できることを確認。項目とオブジェクトで本文が返ることは2026-10-25に確認）
+> - **実証コマンド**: `sf data query -o {組織} -q "SELECT QualifiedApiName, Description FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = '{オブジェクト}'"`、Tooling APIは同じコマンドに `-t` を付け、`SELECT DeveloperName, Description FROM CustomObject`／`SELECT ValidationName, Description FROM ValidationRule`／`SELECT Definition.DeveloperName, Status, Description FROM Flow WHERE Status = 'Active'`／`SELECT DeveloperName, ActiveVersionId, LatestVersionId FROM FlowDefinition WHERE ActiveVersionId = null`／`SELECT Definition.DeveloperName, Status, VersionNumber, Description FROM Flow WHERE Id = '{LatestVersionId}'`
 
 **読んだ本文の扱い**:
 
@@ -51,6 +51,7 @@
 | 説明欄・ヘルプテキストのどちらにも本文が無い（顧客が追加したメタデータ） | AIがAPI名・表示ラベル・定義（データ型・数式・条件など）から推測した本文を、推定として確信度つきで応答に添える。そのメタデータを確認一覧に加える |
 | 権限・経路が無く読めなかった | 「未確認（説明欄を読む権限が無い）」「未確認（説明欄を読む経路が無い）」のように、何が読めなかったかを1行で示して処理を続ける。確認一覧には加えない |
 
+- **同じ会話で読んだ説明欄・ヘルプテキストは読み直さない。** 同じ会話で一度読んだオブジェクト（その項目の説明欄・ヘルプテキストとオブジェクトの説明欄）と入力規則・フローの説明欄は、読んだ値を使う。読み直すのは、その会話でそのオブジェクトにメタデータを配備した後と、利用者が設定画面で変更したと述べたときだけとする。顧客の管理者へ確認一覧を送る前の読み直しは、§回答を受け取るに書いたとおり行う。
 - **1つのメタデータの説明欄とヘルプテキストが食い違うときは、どちらも断定の形で使わない。** 両方を出所つきで並べる。
 - **出所を示す。** 応答では「この組織の説明欄では」「この組織のヘルプテキストでは」のように出所を添え、製品の意味（Atlasの意味定義が返すもの）と区別する。
 - **鮮度の表示を付けない**（鮮度の判定は意味付けの型を読む段階から）。
@@ -144,7 +145,7 @@ meaning_review:
 
 ### 全件の確認一覧を作る
 
-次のいずれかのときに作る: (1) 管理者が求めたとき (2) TIの導入時（導入担当が案内する） (3) 本書を含むスキルの版を配布する前からTIを導入している組織で、配布後に初めてti-spec-viewを使うとき（作業フォルダのある実行環境で、作業フォルダに確認一覧が無ければ、作成をその会話で1回案内する）。
+次のいずれかのときに作る: (1) 管理者が求めたとき (2) TIの導入時（ti-rollout §3の手順10（組織セットアップ）で導入担当が案内する） (3) 本書を含むスキルの版を配布する前からTIを導入している組織で、配布後に初めてti-spec-viewを使うとき（作業フォルダのある実行環境で、作業フォルダに確認一覧が無ければ、作成をその会話で1回案内する）。
 
 1. 顧客が追加したメタデータ（冒頭の用語のとおり。標準のオブジェクト・項目そのものは含めない）を全件一覧にする。取得経路はti-spec-view `references/structure-enumeration.md` による
 2. 各メタデータの説明欄・ヘルプテキストを、§読み方の「取得経路」の表に従って読む
