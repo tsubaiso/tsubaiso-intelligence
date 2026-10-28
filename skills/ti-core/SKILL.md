@@ -1,8 +1,8 @@
 ---
 name: ti-core
-description: '【TI共通規律・スキルを起動していなくても従うこと】(1) TIのMCPツール（atlas_* / isoppy_* 等）をこのセッションで最初に呼ぶ前に、該当するドメインスキルを1本起動する（可否・仕様=ti-howto／参照・集計=ti-reference／画面の場所=ti-navigate／登録・更新=ti-update／カスタマイズ=ti-metadata／接続・環境=ti-rollout、点検・不調=ti-selfcheck）。(2) 利用者へ見せる文章とファイルに内部識別子（tb_PSA__… tb_IMA__… の項目・オブジェクト名、xx_y_Zzz 形式のレシピ名、選択リストの符号値）を書かない＝業務の言葉だけで書く。(3) 引けなかったことは「未確認」と書き、引いた結果のように書かない。(4) Salesforceの接続の dispatch で作成・更新・削除するときは userType を付けない（business を付けると画面のページレイアウトの制約で検査され、件名などの自由入力やメール記録の作成が拒否される）。 各ドメインスキルが共通して呼ぶ横断基盤で、各ドメインスキルが、本文の発火点の表にある時点で該当するreferenceを読む。'
-version: 0.26.0
-updated: 2026-10-25
+description: '【TI共通規律・スキルを起動していなくても従うこと】(1) TIのMCPツール（atlas_* / isoppy_* 等）をこのセッションで最初に呼ぶ前に、該当するドメインスキルを1本起動する（可否・仕様=ti-howto／参照・集計=ti-reference／画面の場所=ti-navigate／登録・更新=ti-update／カスタマイズ=ti-metadata／接続・環境=ti-rollout、点検・不調=ti-selfcheck）。(2) 利用者へ見せる文章とファイルに内部識別子（tb_PSA__… tb_IMA__… の項目・オブジェクト名、xx_y_Zzz 形式のレシピ名、選択リストの符号値）を書かない＝業務の言葉だけで書く。(3) 引けなかったことは「未確認」と書き、引いた結果のように書かない。(4) Salesforceの接続の dispatch で作成・更新・削除するときは userType に builder を付ける（business や指定なしだと画面のページレイアウトの制約で検査され、件名などの自由入力やメール記録の作成が拒否される。builder でも拒否されたら、接続しているユーザーの権限による検査なので ti-local-automation で実行する）。 各ドメインスキルが共通して呼ぶ横断基盤で、各ドメインスキルが、本文の発火点の表にある時点で該当するreferenceを読む。'
+version: 0.27.0
+updated: 2026-10-27
 ---
 
 # ti-core — Tsubaiso Intelligence スキル共通基盤

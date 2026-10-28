@@ -61,20 +61,22 @@ updated: 2026-10-23
 > - **実証コマンド**: `dispatch_readonly` で `GET /services/data/v66.0/query`（`queryParams` の `q` に `SELECT Id, Name FROM Account WHERE Name LIKE '%株式会社%' LIMIT 3`）を呼び（400）、英字の条件に変えて呼ぶ（200）。`GET /services/data/v66.0/parameterizedSearch`（`queryParams` の `q` に日本語）も 400。`dispatch` で `POST /services/data/v66.0/parameterizedSearch`（本文の `q` に日本語）を送る（200 で該当の取引先が返る）
 > - **再実証**: Headless 360 を前提にした設計判断を書くとき
 
-## 書き込みの `dispatch` に `userType` を付けない [REQUIRED]
+## 書き込みの `dispatch` には `userType` に `builder` を付ける [REQUIRED]
 
-**Headless 360 の `dispatch` で作成・更新・削除するときは、`userType` を指定しない（指定するなら `builder`）。** ツールの説明は `userType` を参考情報としつつ、`discover` の説明は業務の操作なら `business` を付けるよう促す。しかし `business` を付けると、書き込みが Salesforce の画面（Lightning）と同じ制約で検査される。
+**Headless 360 の `dispatch` で作成・更新・削除するときは、`userType` に `builder` を指定する。** 指定なしで送らない。ツールの説明は `userType` を参考情報としつつ、`discover` の説明は業務の操作なら `business` を付けるよう促す。しかし `business` を付けると、書き込みが Salesforce の画面（Lightning）と同じ制約で検査される。指定なしは、接続の経路によって `business` と同じ扱いになる（Claude のコネクタでは通り、同じユーザーが直接 MCP で接続すると拒否された。理由は未特定）ため、当てにしない。
 
-- ページレイアウト（または Dynamic Forms）で必須の項目が無いと拒否される（`REQUIRED_FIELD_MISSING`「These fields are required in the Lightning UI」。例: ToDoの割り当て先・優先度）
+- ページレイアウト（または Dynamic Forms）で必須の項目が無いと拒否される（`REQUIRED_FIELD_MISSING`「These fields are required in the Lightning UI」。例: ToDoの割り当て先・優先度、商談の売上予測分類）
 - ページレイアウトで参照のみの項目に値を入れると拒否される（「is read-only in the Lightning UI」）
 - 自由入力できる選択リスト（ToDoの件名など）に、選択肢に無い値を入れると拒否される（`INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`）
 - 画面から作らないオブジェクト（メール記録）は作成できない（`FUNCTIONALITY_NOT_ENABLED`「insert is not supported for entity type 'EmailMessage'」）
 
-**これらのエラーを組織の設定や権限の問題として扱わない。** `userType` を外して同じ呼び出しをやり直す。外しても同じエラーなら、組織側の検査として扱う。参照（`dispatch_readonly`）は対象外。Claude Code では、プラグインのフック（`scripts/dispatch_usertype_guard.py`）が `business` 付きの書き込みを送る前に止め、外してやり直すよう返す。
+**`builder` が効くのは、接続しているユーザーが「アプリケーションのカスタマイズ」（`CustomizeApplication`）の権限を持つときだけ。** この権限を持たないユーザー（営業担当者など、標準ユーザーや業務用のプロファイル）は、`userType` に関わらず画面の制約で検査される。`builder` は、権限を持たないユーザーでは無視されるだけで害は無いので、常に付ける。
 
-> - **依存事実**: Headless 360 の `dispatch` が `userType: business` のときだけ画面と同じ制約で書き込みを検査し、指定なし・`builder` では REST API と同じ扱いになること（Salesforce 側の実装で告知なく変わりうる。利用者の報告では、2026-10-20 までは同じ書き込みが通っていた）
-> - **実証日**: 2026-10-22（検証組織。本番の組織でも同じエラーを利用者の報告で確認）
-> - **実証コマンド**: 検証組織で `dispatch` に `POST /services/data/v66.0/sobjects/Task`（本文 `{"Subject": "確認用", "WhoId": "{取引先責任者のId}", "Status": "Completed"}`）を `userType: business` 付きと指定なしで1回ずつ送る（付きは 400、指定なしは 201）。`POST /services/data/v66.0/sobjects/EmailMessage` も同様に送り分ける。作ったレコードは削除する
+**`builder` を付けても上のエラーが返ったら、接続しているユーザーの権限による検査として扱い、ti-local-automation（本人権限のローカル実行）へ切り替える。** 選択肢に無い件名の ToDo・メール記録・画面で必須の項目が埋まらないレコードの作成がこれに当たる。同じユーザー・同じ値でも、ローカル実行なら作成できる。組織の設定の誤りとして扱わない。ユーザーに「アプリケーションのカスタマイズ」を付けて通す対処は採らない（組織の設定を変更できる管理者の権限のため）。参照（`dispatch_readonly`）は対象外。Claude Code では、プラグインのフック（`scripts/dispatch_usertype_guard.py`）が、`builder` の付いていない書き込みを送る前に止め、`builder` を付けてやり直すよう返す。
+
+> - **依存事実**: Headless 360 の `dispatch` が、`userType: builder` かつ接続しているユーザーが「アプリケーションのカスタマイズ」を持つときだけ REST API と同じ扱いで書き込みを通し、それ以外（`business`・権限を持たないユーザーの `builder`・経路によっては指定なし）は画面と同じ制約で検査すること（Salesforce 側の実装で告知なく変わりうる。利用者の報告では、2026-10-20 までは同じ書き込みが標準ユーザーでも通っていた）
+> - **実証日**: 2026-10-26（検証組織。同じユーザーのプロファイル・権限セットだけを付け替えて送り分けた。本番の組織でも、権限を持たないユーザーで同じエラーを利用者の報告で確認）
+> - **実証コマンド**: 検証組織で、「アプリケーションのカスタマイズ」を持つユーザーと持たないユーザーの接続から、`dispatch` に `POST /services/data/v66.0/sobjects/Task`（本文 `{"Subject": "{選択肢に無い件名}", "WhoId": "{取引先責任者のId}", "Status": "Completed"}`）を `userType: builder` 付きで1回ずつ送る（持つユーザーは 201、持たないユーザーは 400 `INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`）。作ったレコードは削除する
 > - **再実証**: Headless 360 を前提にした設計判断を書くとき
 
 ## 経路の選び方（器がそろっているとき）
