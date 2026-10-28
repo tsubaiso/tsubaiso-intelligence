@@ -1,6 +1,6 @@
 ---
 title: ti-core — 前提の自己診断と提案（capability-preflight）
-updated: 2026-10-23
+updated: 2026-10-27
 ---
 
 # 前提の自己診断と提案（capability-preflight）
@@ -65,17 +65,26 @@ updated: 2026-10-23
 
 **Headless 360 の `dispatch` で作成・更新・削除するときは、`userType` に `builder` を指定する。** 指定なしで送らない。ツールの説明は `userType` を参考情報としつつ、`discover` の説明は業務の操作なら `business` を付けるよう促す。しかし `business` を付けると、書き込みが Salesforce の画面（Lightning）と同じ制約で検査される。指定なしは、接続の経路によって `business` と同じ扱いになる（Claude のコネクタでは通り、同じユーザーが直接 MCP で接続すると拒否された。理由は未特定）ため、当てにしない。
 
-- ページレイアウト（または Dynamic Forms）で必須の項目が無いと拒否される（`REQUIRED_FIELD_MISSING`「These fields are required in the Lightning UI」。例: ToDoの割り当て先・優先度、商談の売上予測分類）
-- ページレイアウトで参照のみの項目に値を入れると拒否される（「is read-only in the Lightning UI」）
-- 自由入力できる選択リスト（ToDoの件名など）に、選択肢に無い値を入れると拒否される（`INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`）
+- ページレイアウト（または Dynamic Forms）で必須の項目が無いと拒否される（`REQUIRED_FIELD_MISSING`「These fields are required in the Lightning UI」。例: ToDoの任命先・優先度、商談の売上予測分類）
+- ページレイアウトで参照のみの項目に値を入れると拒否される（「is read-only in the Lightning UI」）。項目のセクションで編集可にしていても、同じ項目がページレイアウトの「モバイルカード」のセクションに参照のみで配置されていると拒否される（例: ToDoの名前・関連先）
+- 自由入力できるコンボボックス（ToDoの件名など）に、選択リスト値に無い値を入れると拒否される（`INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`）
 - 画面から作らないオブジェクト（メール記録）は作成できない（`FUNCTIONALITY_NOT_ENABLED`「insert is not supported for entity type 'EmailMessage'」）
 
 **`builder` が効くのは、接続しているユーザーが「アプリケーションのカスタマイズ」（`CustomizeApplication`）の権限を持つときだけ。** この権限を持たないユーザー（営業担当者など、標準ユーザーや業務用のプロファイル）は、`userType` に関わらず画面の制約で検査される。`builder` は、権限を持たないユーザーでは無視されるだけで害は無いので、常に付ける。
 
-**`builder` を付けても上のエラーが返ったら、接続しているユーザーの権限による検査として扱い、ti-local-automation（本人権限のローカル実行）へ切り替える。** 選択肢に無い件名の ToDo・メール記録・画面で必須の項目が埋まらないレコードの作成がこれに当たる。同じユーザー・同じ値でも、ローカル実行なら作成できる。組織の設定の誤りとして扱わない。ユーザーに「アプリケーションのカスタマイズ」を付けて通す対処は採らない（組織の設定を変更できる管理者の権限のため）。参照（`dispatch_readonly`）は対象外。Claude Code では、プラグインのフック（`scripts/dispatch_usertype_guard.py`）が、`builder` の付いていない書き込みを送る前に止め、`builder` を付けてやり直すよう返す。
+**`builder` を付けても上の画面の制約のエラーが返ったら、エラーの種類ごとに次の操作を選ぶ。** この拒否は、接続しているユーザーの権限に応じた検査による。権限を持たないユーザーでも、Lightning の画面で入力できる値なら Headless 360 で書き込める（ToDo のコメント・期日・状況・優先度、商談の説明・次のステップ・金額・完了予定日・フェーズ・カスタム項目の更新、取引先・取引先責任者の作成は成功する）。ti-local-automation（本人権限のローカル実行）で実行するのは、下の表で指定した書き込みだけにする。
+
+| 返ったエラー | 次の操作 |
+|---|---|
+| `REQUIRED_FIELD_MISSING`「required in the Lightning UI」 | エラーに示された項目に値を指定して、Headless 360 で再送信する。画面では自動で設定される項目も、要求に値を指定しないと拒否される（ToDo の状況・優先度・任命先、商談の売上予測分類）。任命先は接続しているユーザー、状況・優先度は選択リストの既定値、売上予測分類はフェーズに対応する値を指定する。業務上の既定値が決まらない項目だけ、利用者に確認する |
+| 「is read-only in the Lightning UI」 | 要求からその項目を除いても目的を果たせるなら、除いて再送信する。除けない（ToDo に名前・関連先を設定する等）なら ti-local-automation で実行する。その項目がモバイルカードに参照のみで配置されている場合は、組織の管理者がモバイルカードからその項目を外せば Headless 360 でも書き込めることを、利用者に1文で伝える |
+| `INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`（ToDo の件名などのコンボボックスに、選択リスト値に無い値を指定した） | 選択リスト値で業務上の要件を満たせるなら、その値で再送信する。選択リスト値以外の値が必要なら ti-local-automation で実行する |
+| `FUNCTIONALITY_NOT_ENABLED`（メール記録＝EmailMessage の作成） | ti-local-automation で実行する |
+
+表に無い画面の制約のエラーも、ti-local-automation で実行する。同じユーザー・同じ値でも、ti-local-automation で実行すれば書き込める。モバイルカードの場合を除き、組織の設定の誤りとして扱わない。ユーザーに「アプリケーションのカスタマイズ」を付けて通す対処は採らない（組織の設定を変更できる管理者の権限のため）。参照（`dispatch_readonly`）は対象外。Claude Code では、プラグインのフック（`scripts/dispatch_usertype_guard.py`）が、`builder` の付いていない書き込みを送る前に止め、`builder` を付けてやり直すよう返す。
 
 > - **依存事実**: Headless 360 の `dispatch` が、`userType: builder` かつ接続しているユーザーが「アプリケーションのカスタマイズ」を持つときだけ REST API と同じ扱いで書き込みを通し、それ以外（`business`・権限を持たないユーザーの `builder`・経路によっては指定なし）は画面と同じ制約で検査すること（Salesforce 側の実装で告知なく変わりうる。利用者の報告では、2026-10-20 までは同じ書き込みが標準ユーザーでも通っていた）
-> - **実証日**: 2026-10-26（検証組織。同じユーザーのプロファイル・権限セットだけを付け替えて送り分けた。本番の組織でも、権限を持たないユーザーで同じエラーを利用者の報告で確認）
+> - **実証日**: 2026-10-27（検証組織。同じユーザーのプロファイル・権限セットだけを変更し、設定ごとに要求を送信した〔10-26〕。権限を持たないユーザーで項目ごとに更新・作成の要求を送信し、上の表の結果と、モバイルカードから項目を削除すると名前・関連先を書き込めることを確かめた〔10-27〕。本番の組織でも、権限を持たないユーザーで同じエラーを利用者の報告で確認）
 > - **実証コマンド**: 検証組織で、「アプリケーションのカスタマイズ」を持つユーザーと持たないユーザーの接続から、`dispatch` に `POST /services/data/v66.0/sobjects/Task`（本文 `{"Subject": "{選択肢に無い件名}", "WhoId": "{取引先責任者のId}", "Status": "Completed"}`）を `userType: builder` 付きで1回ずつ送る（持つユーザーは 201、持たないユーザーは 400 `INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`）。作ったレコードは削除する
 > - **再実証**: Headless 360 を前提にした設計判断を書くとき
 

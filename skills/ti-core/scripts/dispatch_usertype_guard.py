@@ -33,10 +33,12 @@ import sys
 
 REASON = (
     "[TI] Salesforceの接続の dispatch で書き込むときは userType に builder を付ける。"
-    "business や指定なしだと、画面のページレイアウトの制約（必須・参照のみ・選択リストの選択肢）で検査され、"
+    "business や指定なしだと、画面のページレイアウトの制約（必須・参照のみ・選択リスト値）で検査され、"
     "メール記録の作成も拒否される。userType に builder を付けて、同じ呼び出しをやり直す。"
     "builder でも同じエラーなら、接続しているユーザーの権限（アプリケーションのカスタマイズを持たない）による検査なので、"
-    "ti-local-automation（本人権限のローカル実行）へ切り替える。詳細は ti-core の references/capability-preflight.md。")
+    "エラーの種類ごとに次の操作を選ぶ。必須と示された項目は値を指定して再送信する。"
+    "選択リスト値に無い件名の設定・メール記録の作成・要求から除けない参照のみの項目への書き込みは、"
+    "ti-local-automation（本人権限のローカル実行）で実行する。詳細は ti-core の references/capability-preflight.md。")
 
 
 def detect(event):
