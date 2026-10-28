@@ -16,7 +16,7 @@ ti-update は「稼働後のデータ（トランザクション＋マスタ）�
 
 ## 書込前構造ゲート（ti-reference へ委譲）
 
-`function_only` 検出・参照先の有効条件フィルタ（作れない工程の検出・参照先の有効性）は **ti-reference の書込前ゲート（write-index 機能）が正本**。ti-update は**書込直前にこのゲートを参照経由で呼ぶ**（再実装しない＝機構の二重管理を避ける）。ゲートの詳細（構造由来の判定）はここに再掲せず、ti-reference へ委譲する。`function_only` 検出・C5 参照フィルタ・auto_create 両方向はいずれも Atlas MCP `atlas_write_seam` が判定する。ゲートが`found:false`を返したときの扱いは、`ti-reference references/write-index.md §found:false は意味定義の有無だけを表す`に従う。`found:false`だけを理由に人へ引き継がない。配列がすべて空の標準オブジェクト（ToDoなど）は通常どおり作成・更新し、人へ引き継ぐのは当社の製品のオブジェクトが未収録と確かめられたときだけとする。他社のパッケージのオブジェクトは同ファイルの規則で書かない。ゲートが応答しない（未接続・403）ときは書込を保留し、機構を捏造せず人へ引き継ぐ（同ファイル §可用性と保留規律）。
+`function_only` 検出・参照先の有効条件フィルタ（作れない工程の検出・参照先の有効性）は **ti-reference の書込前ゲート（write-index 機能）が正本**。ti-update は**書込直前にこのゲートを参照経由で呼ぶ**（再実装しない＝機構の二重管理を避ける）。ゲートの詳細（構造由来の判定）はここに再掲せず、ti-reference へ委譲する。`function_only` 検出・C5 参照フィルタ・auto_create 両方向はいずれも Atlas MCP `atlas_write_seam` が判定する。ゲートが`found:false`を返したときの扱いは、`ti-reference references/write-index.md §found:false は意味定義の有無だけを表す`に従う。`found:false`だけを理由に人へ引き継がない。配列がすべて空の標準オブジェクト（ToDoなど）は通常どおり作成・更新し、人へ引き継ぐのは、当社の製品のオブジェクトが未収録と確かめられたときと、ゲートが応答しない（未接続・403）ときだけとする（応答しないときは書込を保留し、機構を捏造しない。同ファイル §可用性と保留規律）。他社のパッケージのオブジェクトは同ファイルの規則で書かない。
 
 > ti-reference は書込前ゲートの参照ファイル `references/write-index.md`（実体＝Atlas MCP `atlas_write_seam`）を持つ。書込スキルは書込直前にこの write-index.md を発火点で参照してゲートを呼ぶ（SKILL.md の二層注記と一致）。書くレコード自身の入力規則（VR）の充足は ti-update が書込前に検証する（`input-support.md`）。両者は射程が異なる（構造由来の作成可否 vs レコード自身のVR）。
 

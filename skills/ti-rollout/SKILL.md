@@ -1,8 +1,8 @@
 ---
 name: ti-rollout
 description: Tsubaiso Intelligence を顧客環境で使い始めるための接続・環境セットアップを進めるスキル。TRIGGER when 接続・環境セットアップ・MCP/コネクタ結線・カスタムコネクタ登録・Salesforce(PSA/IMA)標準MCP接続・外部クライアントアプリ作成・接続キー取得・初期セットアップ・「TIの使い方を教えて」（接続後の使い始めの練習）。DO NOT TRIGGER when 導入プロジェクトの工程進行・計画立案・Fit&Gap/設計の段取り=ti-onboarding、契約前の価値実証・トライアル体験=ti-poc、データ移行の実行=ti-data-load、MCP に無い任意 API 操作のローカル実行=ti-local-automation、メタデータ＝カスタマイズ定義の生成・デプロイ=ti-metadata。「TIを導入したい」は接続・環境セットアップの局面のみ本スキルが担い、工程進行・計画は ti-onboarding へ寄せる。
-version: 0.24.0
-updated: 2026-10-26
+version: 0.24.1
+updated: 2026-10-28
 ---
 
 # ti-rollout — 導入ロールアウト（接続・環境セットアップの進行）
