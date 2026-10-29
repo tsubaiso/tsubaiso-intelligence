@@ -11,6 +11,7 @@ PSA/IMA（Salesforce マネージドパッケージ）のカスタマイズ（�
 | `SKILL.md` | スキル本体。org カテゴリと安全弁・カスタマイズ着手プリフライト・疎結合設計原則・アップグレード再検証・中核ループ・PSA/IMA 整合ルール |
 | `references/metadata-type-recipes.md` | 種別ごとのオーサリング手順と確定した癖（13 節） |
 | `references/sharing-model.md` | 共有モデル設定（SharingRules／OWD）＝アドバイザリー専用・衝突検知つき追記 |
+| `references/extension-apps.md` | 当社の拡張アプリの導入・版上げ・設定変更・アンインストールの共通手順（ベータ）。拡張アプリごとの値はナレッジから引く |
 | `scripts/tb_mdconfig.py` | 中核ループ（retrieve/diff/checkonly/quick deploy/deploy/verify）を sf CLI v2 上でラップするハーネス。本番＝承認ゲート、検証 org＝確認ゲート内蔵 |
 | `scripts/tb_sharing.py` | 共有モデル設定の author 段（CSV→SharingRules XML 生成・可読ルール翻訳・衝突プリチェック）。org には書かない |
 | `README.md` | 本ファイル（前提・インストール・クイックスタート） |

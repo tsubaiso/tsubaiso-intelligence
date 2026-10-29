@@ -18,7 +18,8 @@ Claude のコネクタでは通り、同じユーザーが直接 MCP で接続�
 
 ## 何をするか・しないか
 
-- ツール名が `__dispatch` で終わり、method が GET 以外で、`userType` が `builder` でないとき
+- ツール名が `__dispatch` で終わり、method が GET 以外で、url が Salesforce の接続のパス
+  （`/services/`・`/headless/` で始まる）で、`userType` が `builder` でないとき
   （`business`・指定なし・その他の値）、permissionDecision=deny と理由を返す。
   POST でも参照の `parameterizedSearch`（日本語の名前で引く経路）は止めない
   モデルは理由に従い、userType に builder を付けて同じ呼び出しをやり直す
@@ -38,7 +39,14 @@ REASON = (
     "builder でも同じエラーなら、接続しているユーザーの権限（アプリケーションのカスタマイズを持たない）による検査なので、"
     "エラーの種類ごとに次の操作を選ぶ。必須と示された項目は値を指定して再送信する。"
     "選択リスト値に無い件名の設定・メール記録の作成・要求から除けない参照のみの項目への書き込みは、"
-    "ti-local-automation（本人権限のローカル実行）で実行する。詳細は ti-core の references/capability-preflight.md。")
+    "更新用のコネクタ（createSobjectRecord・updateSobjectRecord）が会話のツールにあればそれで、"
+    "無ければ ti-local-automation（本人権限のローカル実行）で実行する。どちらも使えなければ、"
+    "Salesforce の画面から登録するよう利用者に伝える。詳細は ti-core の references/capability-preflight.md。")
+
+
+# Headless 360 の dispatch が受け取る相対パスの頭（ツールの説明の例: /services/data/…・/headless/invoke/…）。
+# 同じ名前の dispatch を持つ別の MCP の呼び出しを、誤って止めないために限る
+SF_PATH_PREFIXES = ("/services/", "/headless/")
 
 
 def detect(event):
@@ -52,6 +60,8 @@ def detect(event):
     if str(tin.get("method") or "").upper() in ("", "GET"):
         return False
     path = str(tin.get("url") or "").split("?", 1)[0].rstrip("/").lower()
+    if not path.startswith(SF_PATH_PREFIXES):  # Salesforce の接続でない dispatch は止めない
+        return False
     if path.endswith("/parameterizedsearch"):  # POST だが参照（組織のデータを変えない）
         return False
     return str(tin.get("userType") or "").strip().lower() != "builder"
@@ -102,6 +112,12 @@ def selftest():
             "method": "GET", "url": url, "userType": "business"}}, False),
         ("POST・指定なし・parameterizedSearch（参照）", {"tool_name": "mcp__x__dispatch", "tool_input": {
             "method": "POST", "url": "/services/data/v66.0/parameterizedSearch", "body": {"q": "x"}}}, False),
+        ("POST・指定なし・/headless/ のパス", {"tool_name": "mcp__x__dispatch", "tool_input": {
+            "method": "POST", "url": "/headless/invoke/platform/named-credential"}}, True),
+        ("POST・指定なし・Salesforce でないパス（別の MCP の dispatch）", {"tool_name": "mcp__y__dispatch", "tool_input": {
+            "method": "POST", "url": "/api/v1/items", "body": {"name": "x"}}}, False),
+        ("POST・指定なし・url なし", {"tool_name": "mcp__y__dispatch", "tool_input": {
+            "method": "POST"}}, False),
         ("method なし（dispatch）", {"tool_name": "mcp__x__dispatch", "tool_input": {
             "url": url}}, False),
         ("無関係（Bash）", {"tool_name": "Bash", "tool_input": {"command": "git status"}}, False),

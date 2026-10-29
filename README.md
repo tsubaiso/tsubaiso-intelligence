@@ -76,7 +76,7 @@ AI クライアント別の手順（Claude・Cursor・ChatGPT・Microsoft Copilo
 | `skills/ti-navigate` | **スキル全体。** 利用組織の実際のメニュー構成に基づく画面の場所・開き方・レコード間の移動経路の案内 |
 | `skills/ti-howto` | **スキル全体。** 製品の使い方・可否・仕様の問いに、ナレッジを引いて出典つきで答える入口 |
 | `skills/ti-update` | **承認前チェック**（`references/approval-support.md`）と**承認操作の代行**（`references/approval-execution.md`）。入力支援は正式提供 |
-| `skills/ti-metadata` | **アップグレード再検証のみ**（`§アップグレード再検証`）。バージョンアップが既存カスタマイズへ与える影響の事前点検。差分方式のメタデータ設定は正式提供 |
+| `skills/ti-metadata` | **アップグレード再検証**（`§アップグレード再検証`）と**拡張アプリの導入・版上げ・設定変更・アンインストール**（`references/extension-apps.md`）。バージョンアップが既存カスタマイズへ与える影響の事前点検と、当社の拡張アプリを TI への指示で導入・版上げ・設定変更・アンインストールする手順。差分方式のメタデータ設定は正式提供 |
 | `skills/ti-local-automation` | **顧客レシピの作成・配布のみ**（`§顧客レシピの作成・配布`）。ローカルスクリプトによる API 操作そのものは正式提供 |
 | `skills/ti-data-load` | **自動作成シーム経由の生成のみ**（`references/migration-principles.md §自動作成シーム経由で下流を生成する`）。運用テスト・研修データの生成に用いる。一括投入・移行そのものは正式提供 |
 | `skills/ti-core` | **サポート起票**（`references/support-escalation.md`）と**顧客カスタマイズの意味付け**（`references/customization-meaning.md`）。前者は未解決をまとめてサポートへ引き継ぐ導線、後者は顧客が追加したメタデータの説明欄・ヘルプテキストの読み方と確認一覧。他の共通機構は正式提供 |
