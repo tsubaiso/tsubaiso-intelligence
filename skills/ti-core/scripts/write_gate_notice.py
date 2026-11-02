@@ -25,10 +25,21 @@ Claude Code の PreToolUse フックとして、配布プラグインの plugin.
 2. MCP: ツール名が `__dispatch` で終わり、method が POST で、url か body に
    `tb_PSA__`／`tb_IMA__` が現れるもの（`dispatch_readonly` は GET 専用なので対象外）
 
-確認事項（未確認）: MCP の `tool_input` のキー名（`method`／`url`／`body`）は、読み取り用ツール
-（`dispatch_readonly`）の定義でだけ確かめた（2026-10-11）。書込用ツール（`dispatch`）の定義は
-参照できる接続が無く、まだ確かめていない。キー名が違っていても案内が出ないだけで気づけないため、
-書込用ツールを持つ接続で `tool_input` のキー名を1回確かめ、違えば2.の照合を直す。
+## アクションの呼び出しは別の案内にする
+
+1.・2.のうち、パスが `/actions/`（Apex のカスタムアクション `/actions/custom/apex/{名前}`・
+標準アクション `/actions/standard/{名前}` 等）を含むものは、レコードを作る呼び出しと決めつけない。
+製品のアクションには参照だけのもの（例 `tb_PSA__TbInvocableDetailMasterGetter`）と、レコードを
+作成・更新・削除するもの（例 `tb_PSA__TbInvocableCreateExpense`）が同じパスの形で並び、フックは
+アクションの定義を読めないため、どちらかを見分けられない。名前の語尾で推し量ることもしない
+（命名の規則は製品が保証していない）。そこで「書き込むことがあるアクションの呼び出し」として
+案内し、対象にはオブジェクトでなくアクションの名前を示す。以前は URL のアクション名を
+オブジェクトとして「レコードを作成する」と案内し、参照だけの呼び出しにも作成の案内が出ていた
+（2026-10-29・検証組織で再現。案内が当たらないと読み飛ばされ、本当の作成の前の案内が効かなくなる）。
+
+> - **依存事実**: 製品の Apex のカスタムアクションは `/services/data/vXX.0/actions/custom/apex/{名前空間}__{クラス名}` のパスで呼ばれ、参照だけのものと書き込むものが同じ形で並ぶ。MCP の `dispatch` の `tool_input` のキー名は `method`／`url`／`body`
+> - **実証日**: 2026-10-30
+> - **実証コマンド**: 検証組織の接続で `dispatch_readonly` の `GET /services/data/v66.0/actions/custom/apex`（一覧に Getter と Creator・Deleter が並ぶ）。`dispatch` の `POST /services/data/v66.0/actions/custom/apex/tb_PSA__TbInvocableDetailMasterGetter`（本文 `{"inputs": []}`・`userType: builder`）で、200 と空の配列が返り、このフックの案内が出る（キー名が一致している）
 
 自己検証: `python3 write_gate_notice.py --selftest`
 """
@@ -44,6 +55,8 @@ SF_WRITE_RE = re.compile(
     r"|\bsfdx\s+force:data:(?:record:create|tree:import|bulk:upsert)\b")
 SF_REST_RE = re.compile(r"\bsf\s+api\s+request\s+rest\b")
 POST_RE = re.compile(r"(?:--method|-X)[\s=]+['\"]?POST\b", re.IGNORECASE)
+# アクションの呼び出し（/actions/custom/apex/{名前}・/actions/standard/{名前} 等）。名前を拾う
+ACTION_RE = re.compile(r"/actions/(?:custom/[A-Za-z]+|standard)/([A-Za-z0-9_]+)")
 FILE_OPTS = {"--file", "-f", "--files", "--plan", "-p", "--body", "--sobjecttreefiles",
              "--csvfile", "-c"}
 MAX_READ = 1024 * 1024
@@ -51,6 +64,11 @@ MAX_READ = 1024 * 1024
 USER_MESSAGE = (
     "ツバイソPSA/IMAのレコードを作る呼び出しです。"
     "書込前ゲート（atlas_write_seam）で、この対象を直接作ってよいかを先に確かめてください。"
+    "この案内は呼び出しを止めません。")
+USER_MESSAGE_ACTION = (
+    "ツバイソPSA/IMAのアクションの呼び出しです。参照だけのアクションもあれば、"
+    "レコードを作成・更新・削除するアクションもあります。書き込むアクションなら、"
+    "書込前ゲート（atlas_write_seam）で対象のオブジェクトを先に確かめてください。"
     "この案内は呼び出しを止めません。")
 
 
@@ -62,6 +80,18 @@ def model_context(objects):
         "作成の前に引く。function_only（機能経由でしか作れない）なら直接作らず、応答が示す機能・画面で作る。"
         "auto_create_as_target なら手で作らない。手順の正本は ti-reference の references/write-index.md。"
         "すでに作成してしまった場合は、その事実と対象を利用者へ伝え、ゲートの判定を引いてから扱いを相談する。"
+        "このフックは呼び出しを止めない（判定は人とモデルに委ねる）。")
+
+
+def action_context(actions):
+    names = "、".join(sorted(actions))
+    return (
+        "[TI 書込前ゲートの案内] この呼び出しはツバイソPSA/IMAのアクションを実行する。アクション: " + names + "。"
+        "参照だけのアクションならこの案内は当てはまらない。レコードを作成・更新・削除するアクションなら、"
+        "このセッションでまだ atlas_write_seam(target=<書き込む対象のオブジェクトのAPI名>) を引いていないとき、"
+        "実行の前に引き、このアクションが応答の示す経路（機能・画面）に当たるかを確かめる。"
+        "手順の正本は ti-reference の references/write-index.md。"
+        "すでに書き込んでしまった場合は、その事実と対象を利用者へ伝え、ゲートの判定を引いてから扱いを相談する。"
         "このフックは呼び出しを止めない（判定は人とモデルに委ねる）。")
 
 
@@ -95,8 +125,20 @@ def _file_objects(command, cwd):
     return found
 
 
+def _classify(path_text, names):
+    """アクションの呼び出しなら ("action", アクション名), そうでなければ ("object", 名前) を返す。"""
+    actions = set(ACTION_RE.findall(path_text))
+    if actions:
+        return ("action", actions)
+    return ("object", names) if names else None
+
+
 def detect(event):
-    """案内すべきなら対象オブジェクト名の集合を、不要なら None を返す。"""
+    """案内すべきなら (種類, 名前の集合) を、不要なら None を返す。
+
+    種類は "object"（レコードを作る呼び出し・名前はオブジェクト）か
+    "action"（アクションの呼び出し・名前はアクション）。
+    """
     tool = event.get("tool_name") or ""
     tin = event.get("tool_input") or {}
     if not isinstance(tin, dict):
@@ -110,22 +152,32 @@ def detect(event):
         if not (is_write or is_rest_post):
             return None
         objs = set(NS_RE.findall(cmd)) | _file_objects(cmd, event.get("cwd"))
-        return objs or None
+        if not objs:
+            return None
+        return _classify(cmd if is_rest_post else "", objs)
     if tool.startswith("mcp__") and tool.endswith("__dispatch"):
         if str(tin.get("method") or "").upper() != "POST":
             return None
-        text = str(tin.get("url") or "") + " " + json.dumps(tin.get("body"), ensure_ascii=False)
+        url = str(tin.get("url") or "")
+        text = url + " " + json.dumps(tin.get("body"), ensure_ascii=False)
         objs = set(NS_RE.findall(text))
-        return objs or None
+        if not objs:
+            return None
+        return _classify(url, objs)
     return None
 
 
-def build_output(objects):
+def build_output(found):
+    kind, names = found
+    if kind == "action":
+        user, ctx = USER_MESSAGE_ACTION, action_context(names)
+    else:
+        user, ctx = USER_MESSAGE, model_context(names)
     return {
-        "systemMessage": USER_MESSAGE,
+        "systemMessage": user,
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
-            "additionalContext": model_context(objects),
+            "additionalContext": ctx,
         },
     }
 
@@ -133,9 +185,9 @@ def build_output(objects):
 def main():
     try:
         event = json.load(sys.stdin)
-        objects = detect(event) if isinstance(event, dict) else None
-        if objects:
-            print(json.dumps(build_output(objects), ensure_ascii=False))
+        found = detect(event) if isinstance(event, dict) else None
+        if found:
+            print(json.dumps(build_output(found), ensure_ascii=False))
     except Exception:  # 案内のためのフックなので、どんな失敗でも呼び出しを妨げない
         pass
     return 0
@@ -143,6 +195,8 @@ def main():
 
 def selftest():
     A = "tb_PSA__tb_Quote__c"
+    G = "tb_PSA__TbInvocableDetailMasterGetter"
+    C = "tb_PSA__TbInvocableCreateExpense"
     cases = [
         ("作成（sf data create record）", {"tool_name": "Bash", "tool_input": {
             "command": f"sf data create record -o prod -s {A} -v \"Name='x'\""}}, True),
@@ -163,13 +217,40 @@ def selftest():
         ("無関係（git status）", {"tool_name": "Bash", "tool_input": {"command": "git status"}}, False),
         ("作成（標準オブジェクト）", {"tool_name": "Bash", "tool_input": {
             "command": "sf data create record -s Account -v \"Name='x'\""}}, False),
+        ("MCP dispatch POST（参照だけのApexアクション）", {"tool_name": "mcp__x__dispatch", "tool_input": {
+            "method": "POST", "url": f"/services/data/v66.0/actions/custom/apex/{G}",
+            "body": {"inputs": []}}}, "action"),
+        ("MCP dispatch POST（作成するApexアクション）", {"tool_name": "mcp__x__dispatch", "tool_input": {
+            "method": "POST", "url": f"/services/data/v66.0/actions/custom/apex/{C}",
+            "body": {"inputs": [{"x": 1}]}}}, "action"),
+        ("MCP dispatch POST（標準アクション・本文に項目名）", {"tool_name": "mcp__x__dispatch", "tool_input": {
+            "method": "POST", "url": "/services/data/v66.0/actions/standard/submit",
+            "body": {"inputs": [{"objectId": "a00000000000000AAA", "comment": A}]}}}, "action"),
+        ("MCP dispatch POST（顧客のApexアクション・名前空間なし）", {"tool_name": "mcp__x__dispatch", "tool_input": {
+            "method": "POST", "url": "/services/data/v66.0/actions/custom/apex/MyAction",
+            "body": {"inputs": []}}}, False),
+        ("REST POST（Apexアクション）", {"tool_name": "Bash", "tool_input": {
+            "command": f"sf api request rest /services/data/v66.0/actions/custom/apex/{G} --method POST --body @b.json"}}, "action"),
+        ("一括（ファイル名に actions を含む）", {"tool_name": "Bash", "tool_input": {
+            "command": f"sf data import bulk --sobject {A} --file /tmp/actions/standard/x.csv -o prod"}}, True),
     ]
     ng = 0
     for label, ev, want in cases:
-        got = detect(ev) is not None
-        mark = "✓" if got == want else "✗"
-        ng += got != want
-        print(f"{mark} {label}: 案内{'あり' if got else 'なし'}")
+        found = detect(ev)
+        if want is True:
+            ok = found is not None and found[0] == "object"
+        elif want is False:
+            ok = found is None
+        else:
+            ok = found is not None and found[0] == want
+        got = "なし" if found is None else ("あり（アクション）" if found[0] == "action" else "あり（作成）")
+        if found is not None:
+            out = build_output(found)
+            if found[0] == "action" and "を作成する。対象:" in out["hookSpecificOutput"]["additionalContext"]:
+                ok = False
+        mark = "✓" if ok else "✗"
+        ng += not ok
+        print(f"{mark} {label}: 案内{got}")
     return 1 if ng else 0
 
 
