@@ -1,8 +1,8 @@
 ---
 name: ti-rollout
-description: Tsubaiso Intelligence を顧客環境で使い始めるための接続・環境セットアップを進めるスキル。TRIGGER when 接続・環境セットアップ・MCP/コネクタ結線・カスタムコネクタ登録・Salesforce(PSA/IMA)標準MCP接続・外部クライアントアプリ作成・接続キー取得・初期セットアップ・「TIの使い方を教えて」（接続後の使い始めの練習）。DO NOT TRIGGER when 導入プロジェクトの工程進行・計画立案・Fit&Gap/設計の段取り=ti-onboarding、契約前の価値実証・トライアル体験=ti-poc、データ移行の実行=ti-data-load、MCP に無い任意 API 操作のローカル実行=ti-local-automation、メタデータ＝カスタマイズ定義の生成・デプロイ=ti-metadata。「TIを導入したい」は接続・環境セットアップの局面のみ本スキルが担い、工程進行・計画は ti-onboarding へ寄せる。
-version: 0.25.0
-updated: 2026-10-28
+description: Tsubaiso Intelligence を顧客環境で使い始めるための接続・環境セットアップを進めるスキル。TRIGGER when 接続・環境セットアップ・MCP/コネクタ結線・カスタムコネクタ登録・Salesforce(PSA/IMA)標準MCP接続・ツバイソERP（会計）のMCP接続・外部クライアントアプリ作成・接続キー取得・初期セットアップ・「TIの使い方を教えて」（接続後の使い始めの練習）。DO NOT TRIGGER when 導入プロジェクトの工程進行・計画立案・Fit&Gap/設計の段取り=ti-onboarding、契約前の価値実証・トライアル体験=ti-poc、データ移行の実行=ti-data-load、MCP に無い任意 API 操作のローカル実行=ti-local-automation、メタデータ＝カスタマイズ定義の生成・デプロイ=ti-metadata。「TIを導入したい」は接続・環境セットアップの局面のみ本スキルが担い、工程進行・計画は ti-onboarding へ寄せる。
+version: 0.26.0
+updated: 2026-10-29
 ---
 
 # ti-rollout — 導入ロールアウト（接続・環境セットアップの進行）
@@ -57,6 +57,17 @@ TI は特定 AI クライアントに固定しない。**Claude は参照実装�
 | 「接続」後のサインインで失敗する | 管理者側の接続用アプリの設定（§3 step 5）と、コールバック URL の設定。反映まで時間がかかることがある |
 | 思ったデータが出ない | 本人権限で見えないデータは AI からも見えない。Salesforce の画面で見えるかを先に確かめる |
 | 意図しない組織に接続された | コネクタの接続を切断 → 正しい組織にサインインし直す → 再接続。接続後に「どの組織か確認して」 |
+
+### ツバイソERP（会計）をつなぐとき
+
+ツバイソERPは、PSA/IMAとは別のコネクタ（ERPのMCP）でつなぐ。**接続の手順は、ツバイソヘルプデスクの記事「ClaudeなどのAIクライアントからツバイソERPのデータを扱う」が正本で、本スキルへ書き写さない。** 案内するときは、その記事をナレッジで引いて示す（ti-core `references/knowledge-lookup.md`）。引けないときは手順を推測で組み立てず、引けなかったことを伝えてツバイソのサポートへの問い合わせを案内する。
+
+接続のあとに伝える点は次の4つ。
+
+- 1つの接続で扱えるのは、接続したときに選んだ1つの法人だけ。別の法人を扱うときは接続し直す
+- 接続の有効期限は最長1時間で、早く切れることもある。切れたら接続し直す
+- 見える・触れる範囲は、本人のツバイソERPの権限どおり
+- データの参照・登録には、Tsubaiso Atlas MCPも接続されている必要がある（どのデータをどう取るかはAtlasから引く。参照はti-reference、振替伝票の登録・更新はti-update。登録・更新には保留の条件があり、画面での登録を案内することがある）
 
 ## 2. AI が自動で行う／人が本人操作する（境界）
 
@@ -208,6 +219,7 @@ TI は特定 AI クライアントに固定しない。**Claude は参照実装�
 |---|---|
 | **そのセッションで最初に TI のスキルを使う瞬間（依頼の内容を問わず・1 セッション 1 回）** | ti-core `references/version-freshness.md`（同梱の版と公開されている最新版を照合） |
 | **製品の操作手順・可否・理由を書こうとした瞬間／製品そのもの（コード・フロー・項目ヘルプ・パッケージのメタデータ）を読もうとした瞬間／実測と期待の食い違いを不具合と書こうとした瞬間／作業の対象範囲を自分で数え上げようとした瞬間** | ti-core `references/knowledge-lookup.md`（推測で挙動を組み立てず、ナレッジを引く） |
+| **ツバイソERP（会計）の接続（ERPのMCP）を案内する瞬間** | ti-core `references/knowledge-lookup.md`（接続の手順はナレッジの記事が正本。§1.5） |
 | org へメタデータを書き込む直前（アプリのデプロイ・設定反映） | ti-core `references/safety-gate.md`（メタデータの書込専用。承認ドラフト提示→人が承認） |
 | org のレコードを作成・更新する直前（データの投入） | ti-reference `references/write-index.md` の書込前ゲート（`atlas_write_seam`。承認ドラフト提示→人が承認） |
 | 手順・対象を往復で詰める瞬間 | ti-core `references/spec-roundtrip.md` |
@@ -219,7 +231,7 @@ TI は特定 AI クライアントに固定しない。**Claude は参照実装�
 | 一次解決で解けず利用者が未解決のまま／繰り返し詰まると判定した瞬間 | ti-core `references/support-escalation.md`（本人の許可でサポートへ起票） |
 | 疎通確認が成功した瞬間（利用者フロー 3・§3 step 8）／「TIの使い方を教えて」と頼まれた瞬間 | `references/first-steps-practice.md`（使い始めの練習。中身は公開の利用ガイドからナレッジで引く） |
 
-**本スキルは製品の業務仕様・操作手順の可否には答えない（ti-howto へ渡す）。** ナレッジを引くのは、使い始めの練習で利用ガイドを読むとき（`references/first-steps-practice.md`）と、上の表の knowledge-lookup の行に当たったときだけ。**接続手順については本スキル自身が正本**であることが、ti-core `references/knowledge-lookup.md` の §分担 に自前の行として書かれている。
+**本スキルは製品の業務仕様・操作手順の可否には答えない（ti-howtoへ渡す）。** ナレッジを引くのは、使い始めの練習で利用ガイドを読むとき（`references/first-steps-practice.md`）と、上の表のknowledge-lookupの行に当たったときだけ。**接続手順については本スキル自身が正本**（ツバイソERPの接続は除く＝§1.5 §ツバイソERP（会計）をつなぐとき）であることが、ti-core `references/knowledge-lookup.md` の §分担 に自前の行として書かれている。
 
 
 ## 原則
