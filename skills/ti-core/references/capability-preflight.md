@@ -1,6 +1,6 @@
 ---
 title: ti-core — 前提の自己診断と提案（capability-preflight）
-updated: 2026-10-29
+updated: 2026-11-04
 ---
 
 # 前提の自己診断と提案（capability-preflight）
@@ -96,7 +96,7 @@ updated: 2026-10-29
 > - **実証コマンド**: 検証組織で、「アプリケーションのカスタマイズ」を持つユーザーと持たないユーザーの接続から、`dispatch` に `POST /services/data/v66.0/sobjects/Task`（本文 `{"Subject": "{選択肢に無い件名}", "WhoId": "{取引先責任者のId}", "Status": "Completed"}`）を `userType: builder` 付きで1回ずつ送る（持つユーザーは 201、持たないユーザーは 400 `INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`）。作ったレコードは削除する
 > - **再実証**: Headless 360 を前提にした設計判断を書くとき
 
-承認の申請（`POST /services/data/v66.0/actions/standard/submit`）と Apex のカスタムアクション（`POST /services/data/v66.0/actions/custom/apex/{名前}`）も、`builder` を付けた `dispatch` で、アクションの処理まで届く（`userType` による拒否は返らない）。
+承認の申請（`POST /services/data/v66.0/actions/standard/submit`）と Apex のカスタムアクション（`POST /services/data/v66.0/actions/custom/apex/{名前}`）も、`builder` を付けた `dispatch` で、アクションの処理まで届く（`userType` による拒否は返らない）。確かめたのはシステム管理者の接続だけで、「アプリケーションのカスタマイズ」を持たないユーザーでは未確認。
 
 > - **依存事実**: (1) Headless 360 の `dispatch` で、承認の申請と Apex のカスタムアクションの POST が `userType: builder` 付きでアクションの処理まで届くこと (2) 更新用のコネクタ（`sobject-mutations`）の `createSobjectRecord`・`updateSobjectRecord` が、「アプリケーションのカスタマイズ」を持たないユーザーでも画面の制約を受けずに作成・更新すること（選択肢に無い件名の ToDo・メール記録・売上予測分類を指定しない商談の作成、ToDo の件名の更新）
 > - **実証日**: 2026-10-29（(1) 検証組織・システム管理者の接続。存在しない Id を指定した承認の申請は 400 `INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY`〔アクションの処理のエラー〕、参照だけの Apex のカスタムアクションは 200 で処理結果が返った。(2) は 2026-10-27 に検証組織で、標準ユーザーに付け替えたユーザーで確かめた）

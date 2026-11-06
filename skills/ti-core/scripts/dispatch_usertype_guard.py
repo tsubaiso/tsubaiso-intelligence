@@ -19,7 +19,8 @@ Claude のコネクタでは通り、同じユーザーが直接 MCP で接続�
 ## 何をするか・しないか
 
 - ツール名が `__dispatch` で終わり、method が GET 以外で、url が Salesforce の接続のパス
-  （`/services/`・`/headless/` で始まる）で、`userType` が `builder` でないとき
+  （`/services/`・`/headless/` で始まる。絶対URLや先頭の / が無い形もパスの部分で見る）で、
+  `userType` が `builder` でないとき
   （`business`・指定なし・その他の値）、permissionDecision=deny と理由を返す。
   POST でも参照の `parameterizedSearch`（日本語の名前で引く経路）は止めない
   モデルは理由に従い、userType に builder を付けて同じ呼び出しをやり直す
@@ -31,6 +32,7 @@ Claude のコネクタでは通り、同じユーザーが直接 MCP で接続�
 """
 import json
 import sys
+from urllib.parse import urlsplit
 
 REASON = (
     "[TI] Salesforceの接続の dispatch で書き込むときは userType に builder を付ける。"
@@ -38,6 +40,7 @@ REASON = (
     "メール記録の作成も拒否される。userType に builder を付けて、同じ呼び出しをやり直す。"
     "builder でも同じエラーなら、接続しているユーザーの権限（アプリケーションのカスタマイズを持たない）による検査なので、"
     "エラーの種類ごとに次の操作を選ぶ。必須と示された項目は値を指定して再送信する。"
+    "件名が選択リスト値に無いと拒否されたら、選択リスト値で業務上の要件を満たせるならその値で再送信する。"
     "選択リスト値に無い件名の設定・メール記録の作成・要求から除けない参照のみの項目への書き込みは、"
     "更新用のコネクタ（createSobjectRecord・updateSobjectRecord）が会話のツールにあればそれで、"
     "無ければ ti-local-automation（本人権限のローカル実行）で実行する。どちらも使えなければ、"
@@ -59,7 +62,10 @@ def detect(event):
         return False
     if str(tin.get("method") or "").upper() in ("", "GET"):
         return False
-    path = str(tin.get("url") or "").split("?", 1)[0].rstrip("/").lower()
+    # 絶対URL（https://…/services/…）や先頭の / が無い形（services/…）も、パスだけを取り出して見る
+    path = urlsplit(str(tin.get("url") or "").strip()).path.rstrip("/").lower()
+    if not path.startswith("/"):
+        path = "/" + path
     if not path.startswith(SF_PATH_PREFIXES):  # Salesforce の接続でない dispatch は止めない
         return False
     if path.endswith("/parameterizedsearch"):  # POST だが参照（組織のデータを変えない）
@@ -114,6 +120,10 @@ def selftest():
             "method": "POST", "url": "/services/data/v66.0/parameterizedSearch", "body": {"q": "x"}}}, False),
         ("POST・指定なし・/headless/ のパス", {"tool_name": "mcp__x__dispatch", "tool_input": {
             "method": "POST", "url": "/headless/invoke/platform/named-credential"}}, True),
+        ("POST・指定なし・絶対URL", {"tool_name": "mcp__x__dispatch", "tool_input": {
+            "method": "POST", "url": "https://example.my.salesforce.com" + url, "body": {"Subject": "x"}}}, True),
+        ("POST・指定なし・先頭の / が無いパス", {"tool_name": "mcp__x__dispatch", "tool_input": {
+            "method": "POST", "url": url.lstrip("/"), "body": {"Subject": "x"}}}, True),
         ("POST・指定なし・Salesforce でないパス（別の MCP の dispatch）", {"tool_name": "mcp__y__dispatch", "tool_input": {
             "method": "POST", "url": "/api/v1/items", "body": {"name": "x"}}}, False),
         ("POST・指定なし・url なし", {"tool_name": "mcp__y__dispatch", "tool_input": {

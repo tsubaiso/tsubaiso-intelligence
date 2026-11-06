@@ -58,7 +58,7 @@
 3MVG9d8..z.hDcPJZz__ZVmR5uWWoETu42QLXzULG9VXkOwmCutNF2_ZV0L.TNa4qXA.g2JUsMO8POZaZH3lJ
 ```
 
-**同梱なしの組織**: アプリの「設定」→「OAuth 設定」→「コンシューマー鍵と秘密」→ **コンシューマ鍵**をコピー。
+**同梱なしの組織**: アプリの「設定」→「OAuth 設定」→「コンシューマー鍵と秘密」→ **コンシューマ鍵**をコピー（システム管理者はREST APIでも読める＝§注意（読み取り側の制約））。
 
 どちらも接続元の識別子で秘匿情報ではない（各利用者のヘルパーに配布してよい）。**秘密（Consumer Secret）は使わない**。
 
@@ -67,7 +67,7 @@
 **フェイルクローズを保ったまま、対象者を絞って開ける。**
 
 1. **利用ゲート用の権限セットを作る**（例: `TI_Local_Automation_User`）。付与は最小限＝「API の有効化（ApiEnabled）」のみ（実操作は本人権限。オブジェクト権限は付けない）。メタデータでデプロイ可。
-2. **ECA にこの権限セットを事前承認として紐付ける**: ECA の「ポリシー」タブ →「アプリケーションポリシー」→「権限セットを選択」で、この権限セットを「選択済みの権限セット」へ移して保存（＝保有者が事前承認される）。**プロファイルは紐付けない**——事前承認はプロファイルと権限セットの OR で効く（2026-09-16 実測）ので、プロファイルを選ぶとそのプロファイルの全員が通り、フェイルクローズが崩れる。
+2. **ECA にこの権限セットを事前承認として紐付ける**: ECA の「ポリシー」タブ →「アプリケーションポリシー」→「権限セットを選択」で、この権限セットを「選択済みの権限セット」へ移して保存（＝保有者が事前承認される）。**プロファイルは紐付けない**——事前承認はプロファイルと権限セットの OR で効く（2026-09-16 実測）ので、プロファイルを選ぶとそのプロファイルの全員が通り、フェイルクローズが崩れる。**紐付けをAPI（メタデータ）で行う場合、ECAのポリシー（`ExtlClntAppOauthConfigurablePolicies`）を後から再デプロイすると、権限セットとの紐付け（`SetupEntityAccess`）が消える**（2026-10-31・検証組織で実測）。ポリシーを送り直したら、紐付けも送り直す。
 3. **対象者にこの権限セットを割り当てる**（絞った対象者から）。割当された人だけがこの ECA を使える。
 4. **各利用者は初回だけブラウザで本人 OAuth**（ヘルパー起動）→ リフレッシュトークンを **OS の資格情報ストア**に保管。以後はブラウザなしで本人権限内の API 操作（ti-local-automation／ti-data-load）を行う。手順は §5。
 
@@ -165,7 +165,7 @@ printf '%s\n%s\n' "$TOKEN" "$TOKEN" | security add-generic-password -U -s "$TOKE
 | トークン交換で秘密を要求される／失敗する | §1 の「Web サーバーフローの秘密が必要」「更新トークンフローの秘密が必要」のチェックが残っている | 両方を外す（ループバック＋PKCE はシークレットを使わない）。同梱ありの組織で出たら購読側では直せないので、ツバイソへ問い合わせる |
 | **初回の**トークン交換の応答に `refresh_token` が無い | scope に `refresh_token` が無い、または ECA の OAuth 範囲に「いつでも要求を実行」が無い | scope と §1 の OAuth 範囲を確認する（同梱ありは scope だけ。OAuth 範囲に不足があればツバイソへ）。なお手作りの ECA で**更新時**の応答に含まれないのは正常（既定でローテーションしないため・§5 の 5） |
 | 同梱ありの組織で、しばらく使えたあと更新に失敗する | ローテーションで返った新しい `refresh_token` を保管し直さず、古い値で更新している／更新トークンの有効期限（購読側のポリシー）が切れた | §5 の 5 のとおり、返った値で毎回保管を更新する。失敗したら初回接続をやり直す |
-| `invalid_client_id` | config.json の client_id が別 org・別 ECA のもの／同梱なしの組織で §3 の固定値を使っている／同梱の ECA を使うのに手作りの鍵を置いている | 使う ECA を §0 で確かめ、それに合う §3 の値か確認する（同梱の ECA は §3 の固定値、手作りの ECA は設定画面から読んだ値） |
+| `invalid_client_id` | config.json の client_id が別 org・別 ECA のもの／同梱なしの組織で §3 の固定値を使っている／同梱の ECA を使うのに手作りの鍵を置いている | 使う ECA を §0 で確かめ、それに合う §3 の値か確認する（同梱の ECA は §3 の固定値、手作りの ECA は設定画面かRESTで読んだ値） |
 | 保管したはずのトークンが空で返る（macOS） | `-w`（値なし）へ標準入力を1回しか流していない。`passwords don't match` が出るが**終了コードは 0・項目も作られる**ので、保管できたように見える | §5 のとおり同じ値を2行送り、直後に読み戻して突き合わせる |
 | 2 つ目の組織を足したら 1 つ目が繋がらなくなった | 保管の識別に `token_account` が入っていない、または 2 つの組織に同じ `token_account` を置いたため上書きされた（macOS は `-a`、Secret Service は属性の組、ファイル保管はファイル名で 1 件を特定する） | §5 の識別の表のとおりに含め、値が組織ごとに異なることを確かめたうえで、1 つ目の組織の初回接続をやり直す |
 | 作成・ポリシー変更の直後に認証が通らない | ECA の作成・設定変更が反映されるまで最大 30 分かかる | 待って再試行する |
@@ -190,7 +190,9 @@ ECA の OAuth（コンシューマ鍵・`oauthLink`）はプラットフォー�
 
 ## 注意（読み取り側の制約）
 
-**コンシューマ鍵とコールバックURLは、パッケージ同梱でもローカル作成でも読み出せない [REQUIRED]。** 自分の組織で自分が作ったECAでも同じで、`sf project retrieve start --metadata "ExtlClntAppOauthSettings:{名前}"` が返すのは `commaSeparatedOauthScopes` / `externalClientApplication` / `isFirstPartyAppEnabled` / `label` / `oauthLink` の5つ、Tooling RESTの `GET /tooling/sobjects/ExtlClntAppOauthSettings/{id}` は `NOT_FOUND`（2026-09-18・トライアル組織のローカル作成ECAで実測）。**鍵は §3 のとおり設定画面から人が読む。** ローカル作成へ切り替えてもretrieveで取れるようにはならない。**同梱の `Tsubaiso_Intelligence` の鍵は当社が配る固定値（§3）なので、購読側で読み出す必要はない。**
+**コンシューマ鍵とコールバックURLは、メタデータの取得（retrieve）とToolingの経路では、パッケージ同梱でもローカル作成でも読み出せない [REQUIRED]。** 自分の組織で自分が作ったECAでも同じで、`sf project retrieve start --metadata "ExtlClntAppOauthSettings:{名前}"` が返すのは `commaSeparatedOauthScopes` / `externalClientApplication` / `isFirstPartyAppEnabled` / `label` / `oauthLink` の5つ、Tooling RESTの `GET /tooling/sobjects/ExtlClntAppOauthSettings/{id}` は `NOT_FOUND`（2026-09-18・トライアル組織のローカル作成ECAで実測）。ローカル作成へ切り替えてもretrieveで取れるようにはならない。**同梱の `Tsubaiso_Intelligence` の鍵は当社が配る固定値（§3）なので、購読側で読み出す必要はない。**
+
+**ローカル作成のECAの鍵は、システム管理者がREST APIの `GET /services/data/vXX.X/apps/oauth/credentials/{ECAのId}` で読める**（応答の `consumers[].key`。ECAのIdは Tooling の `SELECT Id FROM ExternalClientApplication WHERE DeveloperName='{名前}'`。2026-10-31・検証組織のローカル作成ECA・API v64.0で実測）。設定画面（§3）を開かずに済む。**コンシューマの秘密は返らなかった**（`?part=keyandsecret`・`?part=secret` とも。実行者は ViewClientSecret・ExternalClientAppAdmin を保有。返す条件は未確認）。同梱の `Tsubaiso_Intelligence` に同じ呼び出しが効くかは未確認。
 
 **加えて、パッケージが同梱しているECAは、購読側から全部は読み出せない。** 書き込み側（デプロイ）は上の4構成要素で規定されているが、**読み取り側は4つとも返るわけではない**。同梱のECAと同じものを手で作り直そうとして、必要な値の半分が取れない形で詰まる。
 

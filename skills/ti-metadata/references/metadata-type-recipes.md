@@ -40,7 +40,7 @@
 
 承認プロセスは「対象オブジェクト＋承認者＋最終/却下アクション」の3点を最小化して型を確立する。最終承認で項目を更新する場合は `WorkflowFieldUpdate` を同梱する（AP の `finalApprovalActions` が参照）。
 
-1. **既存承認プロセスの棚卸し**: `SELECT DeveloperName, Name, TableEnumOrId, State, Type FROM ProcessDefinition`（**通常 SOQL。Tooling API は `ProcessDefinition` を `INVALID_TYPE` で拒否**）。対象オブジェクトに既存の管理 AP があっても**サブスクライバ AP は共存追加できる**。
+1. **既存承認プロセスの棚卸し**: `SELECT DeveloperName, Name, TableEnumOrId, State, Type FROM ProcessDefinition`（**通常 SOQL。Tooling API は `ProcessDefinition` を `INVALID_TYPE` で拒否**。2026-10-31・API 68.0 で確認：Tooling は「sObject type 'ProcessDefinition' is not supported.」を返し、通常 SOQL は読めた）。対象オブジェクトに既存の管理 AP があっても**サブスクライバ AP は共存追加できる**。
 2. **オーサリング**:
    - `approvalProcesses/{Object}.{Process}.approvalProcess-meta.xml`。最小要素＝`active` / `allowedSubmitters`（`owner` 等）/ `approvalStep`（`assignedApprover.approver.type` は **`adhoc`＝手動選択が org 差異に最も強い**。特定ユーザ名のハードコードを避ける）/ `recordEditability` / `processOrder`。
    - `emailTemplate` の**空要素 `<emailTemplate></emailTemplate>` は入れない**（存在しないテンプレ参照エラーの元）。使うときのみ実テンプレ名を入れる。

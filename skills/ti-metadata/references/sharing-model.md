@@ -5,7 +5,7 @@ PSA 標準の共有機構（レコード可視範囲＝個人→チーム→全�
 ## 扱う機構
 
 - **共有ルール2型**＝(a) 所有者ベース `sharingOwnerRules`（付与元＝全内部ユーザ→グループ＝管理・スタッフ部門への全社共有）、(b) 条件ベース `sharingCriteriaRules`（条件フィールド＝部門コードを条件に→グループ＝部門/チーム単位の可視化）。条件ベースは条件フィールドを持つ obj のみ対象＝**持たない obj（集計オブジェクト等）は所有者ベースか権限セット/OWD に委ねる**。
-- **OWD（組織の共有設定）**＝各 obj の `sharingModel`/`externalSharingModel`。共有ルールは OWD を「拡張」するため、拡張対象は非公開（Private）にしておく必要がある（既に全社参照なら共有ルールは無意味）。
+- **OWD（組織の共有設定）**＝各 obj の `sharingModel`/`externalSharingModel`。共有ルールは OWD より広げるだけ。作れるのは OWD が非公開（Private）か公開/参照のみ（Public Read Only）のオブジェクトで、公開/参照・更新では作れない。公開/参照のみなら、意味があるのは参照・更新を与えるルールだけ（公式の資料 [Sharing Rule Considerations](https://help.salesforce.com/s/articleView?id=platform.security_sharing_rule_considerations.htm&language=en_US&type=5)「To create sharing rules, your organization-wide defaults must be Public Read Only or Private.」・2026-11-04取得）。
 - **付与先＝部門公開グループ**＝部門マスタ由来の公開グループ（部門・部門責任者）。当社が独自にグループを作らず、部門マスタ登録時に自動生成される公開グループを共有先に使う。
 
 ## 入力モデル＝意図ヒアリング→可読ルール（正）→裏CSV [REQUIRED]
@@ -44,4 +44,4 @@ PSA 標準の共有機構（レコード可視範囲＝個人→チーム→全�
 
 ## 確定した癖
 
-①SharingRules コンテナ deploy は **additive**（省いたルールを消さない＝REPLACE ではない）。削除は destructiveChanges で明示する。②**owner rule は (sharedFrom,sharedTo) で SF が一意化**し、衝突追記が既存 access を silent 上書き（Edit→Read）する。③**criteria rule は (sharedTo,field,value) では一意化されず並存する**（上書きしない・実効 UNION）ため、重複は broaden／redundant として提示する。④checkonly は access 変化を捕捉しない（メタデータ妥当性のみ）＝author 段の衝突プリチェックが唯一の事前防御点。⑤挿入は XSD 要素グルーピング（criteria 群→owner 群）を守らないと `duplicated at this location` で deploy 失敗する。⑥誤設定の復元は着手前 retrieve した現状 XML の再デプロイ＝復元ランブック（実機検証で機能を確認済）。
+①SharingRules コンテナ deploy は **additive**（省いたルールを消さない＝REPLACE ではない）。削除は destructiveChanges で明示する。②**owner rule は (sharedFrom,sharedTo) で SF が一意化**し、衝突追記が既存 access を silent 上書き（Edit→Read）する（公式の資料 Sharing Rule Considerations「Creating an owner-based sharing rule with the same source and target groups as an existing rule overwrites the existing rule.」・2026-11-04取得）。③**criteria rule は (sharedTo,field,value) では一意化されず並存する**（上書きしない・実効 UNION）ため、重複は broaden／redundant として提示する。④checkonly は access 変化を捕捉しない（メタデータ妥当性のみ）＝author 段の衝突プリチェックが唯一の事前防御点。⑤挿入は XSD 要素グルーピング（criteria 群→owner 群）を守らないと `duplicated at this location` で deploy 失敗する。⑥誤設定の復元は着手前 retrieve した現状 XML の再デプロイ＝復元ランブック（実機検証で機能を確認済）。

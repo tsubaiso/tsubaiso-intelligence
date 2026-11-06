@@ -56,6 +56,7 @@ SF_WRITE_RE = re.compile(
 SF_REST_RE = re.compile(r"\bsf\s+api\s+request\s+rest\b")
 POST_RE = re.compile(r"(?:--method|-X)[\s=]+['\"]?POST\b", re.IGNORECASE)
 # アクションの呼び出し（/actions/custom/apex/{名前}・/actions/standard/{名前} 等）。名前を拾う
+# クイックアクション（/sobjects/{名前}/quickActions/…）は /actions/ を含まないので、ここには当たらずレコードの作成として扱う
 ACTION_RE = re.compile(r"/actions/(?:custom/[A-Za-z]+|standard)/([A-Za-z0-9_]+)")
 FILE_OPTS = {"--file", "-f", "--files", "--plan", "-p", "--body", "--sobjecttreefiles",
              "--csvfile", "-c"}
