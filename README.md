@@ -29,7 +29,7 @@ Atlas と Knowledge から取得できる範囲は、サーバーが利用者本
 | [Tsubaiso Intelligence利用ガイド（全利用者共通）](https://support.tsubaiso.jp/hc/ja/articles/62236549859609) | すべての利用者（利用開始時の設定・接続の確認・更新の取得方法） | どなたでも閲覧可 |
 | [Tsubaiso Intelligence利用ガイド（導入担当者編）](https://support.tsubaiso.jp/hc/ja/articles/62236566701849) | 導入を進める担当者（導入の各工程で使うスキル・Salesforce CLI からの接続） | どなたでも閲覧可 |
 
-AI クライアント別の手順（Claude・Cursor・ChatGPT・Microsoft Copilot Studio）と、旧版のツバイソPSA を利用している組織向けの追加手順は、セットアップ手順（システム管理者向け・標準版）の索引から開く。索引とこれらの手順は、いずれもサインインが必要である。
+AI クライアント別の手順（Claude・Cursor・ChatGPT・Microsoft Copilot Studio）は、セットアップ手順（システム管理者向け・標準版）の索引から開く。索引とこれらの手順は、いずれもサインインが必要である。
 
 記事の一覧は、ツバイソヘルプデスクの「[セットアップ](https://support.tsubaiso.jp/hc/ja/sections/62236449063705)」「[利用ガイド](https://support.tsubaiso.jp/hc/ja/sections/62236458023321)」の各セクションにある。サインインしていない場合は、サインインせずに閲覧できる記事だけが一覧に表示される。
 
