@@ -89,7 +89,7 @@ GET /services/data/v{最新}/analytics/reports/{レポートId}/describe
 
 検知したら、定義から取れる要素（2・4〜7）で説明文の案を組み立てて提示する。1文目（何が分かるか）は業務判断が要るので、利用者に確認する。
 
-**パッケージに同梱したレポートは、直しても版上げでは届かない。** Salesforce の公式の資料（Components Available in Second-Generation Managed Packages の Report の行。2026-11-08取得）は、レポートを「Component Is Updated During Package Upgrade: No」とし、組織の側でも一意の名前以外を編集できるとする。届くのは新しくインストールする組織だけなので、インストール済みの組織では、その組織のレポートの説明文・絞り込みを直す形で提案する。
+**パッケージに同梱したレポートは、直しても版上げでは届かない。** Salesforce の公式の資料（Components Available in Second-Generation Managed Packages の Report の行。2026-11-08取得）は、レポートを「Component Is Updated During Package Upgrade: No」とし、組織の側でも一意の名前以外を編集できるとする。届くのは、そのレポートを初めて含む版を入れたときだけ（新しくインストールしたときと、インストール済みの組織がそのレポートを初めて含む版へ上げたとき）。組織の側で削除したレポートは、版を上げても戻らない（同じ資料は、レポートを「Subscriber Can Delete Component From Org: Yes」とし、この欄の説明に「Deleted components aren’t reinstalled during a package upgrade.」と書く。2026-11-11取得）。すでにそのレポートを持つ組織では、その組織のレポートの説明文・絞り込みを直す形で提案する。
 https://developer.salesforce.com/docs/platform/pkg2-dev/guide/packaging-packageable-components.html
 
 ## 例

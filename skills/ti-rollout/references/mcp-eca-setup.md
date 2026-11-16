@@ -19,6 +19,8 @@ Salesforce の標準（ホステッド）MCP サーバー（既定は `headless-
 
 **同梱 ECA は本手順の代わりにならない [REQUIRED]。** どちらも `mcp_api` を持たないため、ホステッド MCP へは接続できない。同梱 ECA が入っている組織でも、本手順の ECA は別に作る。
 
+OAuth 範囲に `mcp_api` を含むかは、Tooling APIを使わない照会（`sf data query` の既定）で確認できる：`sf data query --target-org {組織} -q "SELECT DeveloperName, NamespacePrefix, OauthScopesMCP_API, OauthScopesAPI FROM ExtlClntAppOauthSettings"`。`OauthScopesMCP_API` が `false` のレコードに対応する ECA では、ホステッド MCP へ接続できない。2026-11-12に検証組織（API 64.0・68.0）で照会した。パッケージ同梱の ECA 2本は、`OauthScopesMCP_API` が `false`・`OauthScopesAPI` が `true` だった。ローカル作成のホステッド MCP 用の ECA 2本は、`OauthScopesMCP_API` が `true` だった。
+
 **同梱 ECA の設定は購読側から全部は読み出せない**（`api-eca-setup.md §注意（読み取り側の制約）`）。画面で見えた範囲だけを根拠に「同じものが既にある」と判断しない。
 
 ## 1. 命名（組織 × AI クライアントごとに 1 つ）
@@ -52,7 +54,7 @@ Salesforce の標準（ホステッド）MCP サーバー（既定は `headless-
 **共通のURLを案内しない理由は2つある。**
 
 1. **Claudeはコネクタを、サーバーURLで区別する。** 同じURLのコネクタを2つ目として追加しようとすると「このURLのコネクタはすでに組織内に存在します」と表示され、登録できない（2026-09-21実機・Claudeで組織に追加するカスタムコネクタ）。共通のURLには接続先の組織が含まれず、本番組織とトライアル組織（または本番組織どうし）が同じURLになるため、同じClaudeの組織に両方を登録できない。組織ごとのURLなら組織ごとにURLが分かれ、両方とも登録できる（2026-10-21、Claude側の当社の組織に、本番組織と検証組織（トライアル組織）のコネクタを両方とも登録した）
-2. **`login.salesforce.com` からのログインを許可していない組織では、共通のURLの認証が失敗する。** Salesforceの公開情報（forcedotcom/mcp-hosted のWiki「Connecting Your MCP Client」）は、私のドメイン名を含むURLをすべての組織に推奨している
+2. **`login.salesforce.com` からのログインを禁止している組織では、共通のURLの認証が失敗する。私のドメインのURLを使う（Salesforceの公式の資料に記載）。** Salesforceの開発者向けの資料「[Find Your Server URL](https://developer.salesforce.com/docs/platform/hosted-mcp-servers/guide/server-urls.html)」（2026-11-12取得）には「For convenience, you can use the standard format. If your org blocks logins from login.salesforce.com or test.salesforce.com, use the My Domain URL format instead.」と記載されている。同資料は、共通のURL（同資料の「standard format」）も使えるとしている。組織ごとのURLを既定にする理由は1に記載した
 
 **どちらの症状もエラーではなく「登録できない」「接続できない」として現れる。そのため、コンシューマ鍵・OAuth範囲・MCPサーバーの有効化など前の工程の誤りと取り違えやすい [REQUIRED]。** 2つ目のコネクタが登録できないときは、前の工程へ戻る前に、既存のコネクタが共通のURLで登録されていないかを先に確認する。Claude以外のクライアントが同じ区別をするかは未確認である。そのクライアントの画面で確かめる。
 

@@ -192,7 +192,18 @@ ECA の OAuth（コンシューマ鍵・`oauthLink`）はプラットフォー�
 
 **コンシューマ鍵とコールバックURLは、メタデータの取得（retrieve）とToolingの経路では、パッケージ同梱でもローカル作成でも読み出せない [REQUIRED]。** 自分の組織で自分が作ったECAでも同じで、`sf project retrieve start --metadata "ExtlClntAppOauthSettings:{名前}"` が返すのは `commaSeparatedOauthScopes` / `externalClientApplication` / `isFirstPartyAppEnabled` / `label` / `oauthLink` の5つ、Tooling RESTの `GET /tooling/sobjects/ExtlClntAppOauthSettings/{id}` は `NOT_FOUND`（2026-09-18・トライアル組織のローカル作成ECAで実測）。ローカル作成へ切り替えてもretrieveで取れるようにはならない。**同梱の `Tsubaiso_Intelligence` の鍵は当社が配る固定値（§3）なので、購読側で読み出す必要はない。**
 
-**ローカル作成のECAの鍵は、システム管理者がREST APIの `GET /services/data/vXX.X/apps/oauth/credentials/{ECAのId}` で読める**（応答の `consumers[].key`。ECAのIdは Tooling の `SELECT Id FROM ExternalClientApplication WHERE DeveloperName='{名前}'`。2026-10-31・検証組織のローカル作成ECA・API v64.0で実測）。設定画面（§3）を開かずに済む。**コンシューマの秘密は返らなかった**（`?part=keyandsecret`・`?part=secret` とも。実行者は ViewClientSecret・ExternalClientAppAdmin を保有。返す条件は未確認）。同梱の `Tsubaiso_Intelligence` に同じ呼び出しが効くかは未確認。
+**ローカル作成のECAのコンシューマ鍵は、システム管理者がREST APIの `GET /services/data/vXX.X/apps/oauth/credentials/{ECAのId}` で取得できる場合がある。パッケージ同梱のECA 2本では空の応答だった。** コンシューマ鍵は応答の `consumers[].key` に返る。このエンドポイントはSalesforceの開発者向けの資料「[Connect REST API（Core）](https://developer.salesforce.com/docs/platform/connect-rest-api/references/connect-rest-api-core)」の「OAuth Credentials by App ID」（v60.0以降）に記載されているが、どのECAでコンシューマ鍵が返るかの条件は記載されていない。実測の結果を次の表に示す。コンシューマ鍵が返る条件は未確認である。
+
+| 実測 | ECA | 結果 |
+|---|---|---|
+| 2026-10-31・検証組織・API 64.0 | メタデータで作ったローカル作成のECA（確認後に削除） | コンシューマ鍵が返った |
+| 2026-11-12・検証組織・API 64.0と68.0 | ローカル作成のECA 2本（ホステッド MCP 用） | コンシューマ鍵が返った |
+| 2026-11-12・検証組織・API 64.0と68.0 | パッケージ同梱の `Tsubaiso_Intelligence`・`Tsubaiso_F0_Login` | `{"consumers": []}`（空） |
+
+- ECAのIdは、Tooling APIを使わない照会（`sf data query` の既定）で取得する：`sf data query --target-org {組織} -q "SELECT Id, DeveloperName, NamespacePrefix FROM ExternalClientApplication WHERE DeveloperName='{名前}'"`。**Tooling APIで取得するときは、APIバージョンを68.0に指定する。** 2026-11-12の検証組織で、Tooling APIは64.0では「sObject type 'ExternalClientApplication' is not supported.」で拒否され、68.0ではレコードが返った。Tooling APIを使わない照会は、64.0・68.0ともレコードが返った
+- コンシューマ鍵が返れば、設定画面（§3）を開かずにコンシューマ鍵を取得できる。応答が空のときは、設定画面（§3）でコンシューマ鍵を確認する
+- **コンシューマの秘密は返らなかった**（2026-10-31。`?part=keyandsecret`・`?part=secret` とも。実行者は ViewClientSecret・ExternalClientAppAdmin を保有。返す条件は未確認）
+- パッケージ同梱の `Tsubaiso_Intelligence` のコンシューマ鍵は当社が配布する固定値（§3）なので、応答が空でも、§3の固定値を使えば設定画面での確認は不要である
 
 **加えて、パッケージが同梱しているECAは、購読側から全部は読み出せない。** 書き込み側（デプロイ）は上の4構成要素で規定されているが、**読み取り側は4つとも返るわけではない**。同梱のECAと同じものを手で作り直そうとして、必要な値の半分が取れない形で詰まる。
 
