@@ -1,13 +1,13 @@
 ---
 title: ti-reference — ツバイソERPのデータを参照する（ERPのMCP）
-updated: 2026-10-29
+updated: 2026-11-12
 ---
 
 # ツバイソERPのデータを参照する（ERPのMCP）
 
 本書の「ツバイソERP」は、会計の製品（会計・販売・給与など）を指す。SalesforceのパッケージであるツバイソPSA/IMAとは別の製品で、ti-updateが「ERPの外にあるデータ」と書くときのERP（PSA/IMAを指す）とも別のものである。利用者へ見せる文では「ツバイソERP」と呼び、初出は「ツバイソERP（会計）」と書く。
 
-登録・更新はti-update `references/tsubaiso-erp-write.md` が持つ。本書は参照・集計だけを扱う。
+登録・更新はti-update `references/tsubaiso-erp-write.md` が持つ。使い始めるときの移行（マスタ・期首の残高・固定資産の投入）はti-data-load `references/tsubaiso-erp-migration.md` が持つ。本書は参照・集計だけを扱う。
 
 ## いつ読むか
 
@@ -43,7 +43,7 @@ updated: 2026-10-29
 | `method` | 参照は `GET`。ツールはGETとPOSTだけを通し、ほかは400を返す |
 | `params` | GETでは、キーと値が1組ずつクエリ文字列に付く。値は文字列・数値などの平らな値だけにする（配列や入れ子の値は1つの文字列になり、正しく送れない）。POSTでは本文になる |
 
-- **参照はGETで行う。** POSTは参照でも書き込みでも同じツールを通り、ツバイソERPで登録・更新・削除まで届く。POSTを使うのはti-updateの書き込みの手順だけにする
+- **参照はGETで行う。** POSTは参照でも書き込みでも同じツールを通り、ツバイソERPで登録・更新・削除まで届く。POSTを使うのはti-updateの書き込みの手順と、ti-data-loadの移行の手順だけにする
 - **必須の絞り込み**（`呼び方:` の括弧の中）は必ず渡す
 - **年月を受ける一覧は、年と月を両方指定する。** 年月を省くと当月分だけが、年だけを渡すとその年の1月分だけが、どちらも通知もエラーも無く返る。複数の月は月ごとに呼ぶ
 - **形式を指定しない。** JSON以外（CSV・PDF・HTML）で返る呼び方をしない。JSON以外の本文は、長いと途中で切れて返る
@@ -87,7 +87,7 @@ Atlasの `atlas_recipe` は、ツバイソERPのレシピも `soql` の欄に入
 | 502 | ツバイソERPへつながらない、または応答が時間内に返らない | 年月・件数などで絞って1回だけ呼び直す。続けて失敗したら利用者に伝える |
 | 別の法人のデータが要る | 1つの接続は1法人 | コネクタを接続し直し、法人を選び直すよう案内する |
 
-書き込み（POST）の失敗は、ti-update `references/tsubaiso-erp-write.md §失敗したとき` を本表より優先する。
+書き込み（POST）の失敗は、ti-update `references/tsubaiso-erp-write.md §失敗したとき` を本表より優先する。移行のPOSTの失敗は、ti-data-load `references/tsubaiso-erp-migration.md §途中で止まったとき・失敗したとき` を優先する。
 
 > - **依存事実**: ERPのMCPが `call_web_api` の1本だけを公開し、GET・POST以外に400を返し、ツバイソERPのステータスを素通しし、接続できないときと読み取りの時間切れに502を返し、JSONでない本文を文字列で返すこと。接続の有効期限が最長1時間で、1つの接続が1法人に結びつくこと。GETで登録が起きる画面のpathがあること。Atlasの `atlas_recipe` がツバイソERPのレシピを `soql` の欄で返すこと（いずれも開発チームの変更で変わりうる）
 > - **実証日**: 2026-10-29（ERPのMCPのコードとツバイソERPのコード、Atlasの `atlas_domain_index`・`atlas_explain`・`atlas_recipe` の応答で確かめた。300番台の転送の扱いは実機で確かめていない）

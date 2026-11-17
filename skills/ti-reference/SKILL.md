@@ -1,8 +1,8 @@
 ---
 name: ti-reference
 description: 'ツバイソPSA/IMA（Salesforce）とツバイソERP（会計）の業務データを参照・集計するときに使う。経費・売上（見積〜受注〜納品〜売上〜請求〜入金消込〜手形電債〜EC連携）・調達（発注〜検収〜仕入経費〜支払・発注EC/仕入先EC）・制作（制作指図〜工数〜原価計算票・進行基準）・管理会計・案件・返品・与信・契約・勤怠・マスタ（通貨/為替/銀行/社員/人件費レート/価格表）・在庫（IMA 倉庫/棚/ロット/受払/月次）・財務記録（汎用仕訳・会計連携）・管理会計2への計上連携のデータを、標準Salesforce MCPで取得するためのスキル。ツバイソERPのデータはERPのMCPで取得する。PSA/IMAのオブジェクトや項目を探すとき、SOQLを組み立てるとき、結果をリンク付きで返すときに必ず読む。製品の仕様・操作手順・可否は ti-howto。'
-version: 12.17.0
-updated: 2026-11-04
+version: 12.17.2
+updated: 2026-11-16
 ---
 
 # ti-reference — PSA/IMA参照の知識層（Tsubaiso Atlas MCP クライアント）
@@ -15,9 +15,9 @@ updated: 2026-11-04
 
 - **そのセッションで最初に TI のスキルを使うときは、依頼の内容を問わず ti-core `references/version-freshness.md` を読み、同梱の版と公開されている最新版を照合する**（1 セッション 1 回。古ければ本題の前に 1 行告げ、そのうえで本題は進める）
 - **そのセッションで組織を最初に参照する直前に、接続先の組織を確かめる**（ti-core `references/capability-preflight.md §接続先の組織を確認してから操作を始める`。接続中のユーザー名を意図した組織のユーザー名と照合し、一致しなければ参照しない。接続が複数あれば接続ごとに確かめる）
-- 標準（ホステッド）Salesforce MCPが接続済みであること（接続手順は[Salesforce標準MCPサーバー接続ガイド](https://support.tsubaiso.jp/hc/ja/articles/58638669783065)）
+- 標準（ホステッド）Salesforce MCPが接続済みであること（接続の手順は `ti-rollout`）
 - **Tsubaiso Atlas MCPが接続済みであること**（意味・ルール・レシピの配信元。参照系4ツール `atlas_domain_index`／`atlas_explain`／`atlas_recipe`／`atlas_drift_check`、および作成・更新タスク時の書込前ゲート `atlas_write_seam`。利用可否はPSA契約のエンタイトルメントで判定され、失効時はツール応答が403になる）
-- **Tsubaiso Knowledge MCPが接続済みであること**（製品の仕様・操作手順の配信元。Atlasと同じく、管理者が組織に追加するカスタムコネクタの形で提供される）
+- **Tsubaiso Knowledge MCPが接続済みであること**（製品の仕様・操作手順の配信元。Atlasと同じく、TIのプラグインに同梱したコネクタとして提供される。プラグインでコネクタが入らないAIでは、管理者が追加するカスタムコネクタ）
 - 利用組織にPSA（必要に応じてIMA）パッケージが導入済みであること
 - 参照（SOQL集計・リンク化）が主用途。加えて、作成・更新タスクでは §書込タスクの手順（作成・更新）に従い、書込レシピと書込前ゲートの両方を引いてから書く
 
@@ -28,7 +28,7 @@ updated: 2026-11-04
 - ERPのMCPが接続済みであること（接続の案内はti-rollout）
 - Tsubaiso Atlas MCPを引けること。Atlasが未接続・403のときは、ERPのMCPを推測で呼ばない。確認を促す先はAtlasの接続と利用契約で、PSAの契約に限らない
 
-ツバイソERPへの登録・更新はti-updateが扱う。
+ツバイソERPへの登録・更新はti-updateが扱う。使い始めるときの移行はti-data-loadが扱う。
 
 ### 製品の仕様・操作手順に触れるとき [REQUIRED]
 

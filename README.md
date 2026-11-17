@@ -1,5 +1,7 @@
 # Tsubaiso Intelligence Skill
 
+Tsubaiso Intelligence Skill is a set of Claude skills for customers of Tsubaiso PSA and Tsubaiso IMA, the project-management and inventory-management products built on Salesforce. The skills help Claude look up product data, load and update records, configure metadata, produce business documents, and support rollout, proof-of-concept, and operations decisions. The plugin bundles two connectors, Tsubaiso Atlas (semantic definitions and SOQL recipes) and Tsubaiso Knowledge (product documentation), and is used together with Salesforce's own MCP server for your org. It includes two hooks that run locally and send no data: one shows a notice before Claude creates records in your org, and the other rejects a write call to your Salesforce org that does not set the userType "builder", so that Claude resends it with that value. The Standard and Enterprise plans of Tsubaiso Intelligence, or a trial, are required.
+
 Tsubaiso Intelligence（サービス）の**配布スキルパッケージ（プラグイン）**です。PSA/IMA（Salesforce）業務を Claude が支援するためのスキル群を収録します。
 
 > 用語: 「Tsubaiso Intelligence」はサービス総称、「Tsubaiso Intelligence Skill」は本配布物（プラグイン）の名称です（GLOSSARY 準拠）。
@@ -16,7 +18,9 @@ Tsubaiso Intelligence（サービス）の**配布スキルパッケージ（プ
 
 Atlas と Knowledge から取得できる範囲は、サーバーが利用者本人の資格で判定する。AI クライアント側に、取得範囲を設定する項目は無い。
 
-本パッケージは書込前の警告フックを同梱する。Claude Code と Claude Agent SDK では、Bash と MCP の `dispatch` のすべての呼び出しの前に判定が走り、ツバイソPSA/IMA のレコードを作る呼び出しにだけ案内を出す。呼び出しは止めない（詳細は `skills/ti-core/references/safety-gate.md`）。
+本パッケージは2つのフックを同梱する。どちらも手元で動き、データを外部へ送らない。1つは書込前の警告フックで、Claude Code と Claude Agent SDK では、Bash と MCP の `dispatch` のすべての呼び出しの前に判定が走り、ツバイソPSA/IMA のレコードを作る呼び出しにだけ案内を出す。呼び出しは止めない（詳細は `skills/ti-core/references/safety-gate.md`）。もう1つのフックは、MCP の `dispatch` でツバイソPSA/IMA へ書き込む呼び出しのうち、userType に `builder` を付けていないものを止め、`builder` を付けてやり直すよう Claude に返す（詳細は `skills/ti-core/references/capability-preflight.md`）。
+
+Tsubaiso Intelligenceの概要・安全性・使い始めるまでの流れは、[製品ページ](https://tsubaiso.jp/about_tsubaiso/tsubaiso-intelligence.html)（どなたでも閲覧可）に掲載している。
 
 導入の手順と使い方は、ツバイソヘルプデスクの記事に掲載している。手順は AI クライアントや Salesforce の画面の変更に合わせて更新する。そのため README には手順を記載せず、記事を正とする。
 
@@ -24,7 +28,6 @@ Atlas と Knowledge から取得できる範囲は、サーバーが利用者本
 
 | 記事 | 対象の方 | 閲覧の条件 |
 |---|---|---|
-| [ClaudeやCursorなどのAIクライアントからツバイソPSA/IMAのデータを扱う](https://support.tsubaiso.jp/hc/ja/articles/58638669783065) | Tsubaiso Intelligence の概要と接続までの流れを知りたい方 | どなたでも閲覧可 |
 | [Tsubaiso Intelligenceセットアップ手順（システム管理者向け・標準版）](https://support.tsubaiso.jp/hc/ja/articles/62236593830681) | 組織のシステム管理者（スキルの導入・組織への配布・ツバイソPSA/IMA の組織への接続の設定） | サインインが必要 |
 | [Tsubaiso Intelligence利用ガイド（全利用者共通）](https://support.tsubaiso.jp/hc/ja/articles/62236549859609) | すべての利用者（利用開始時の設定・接続の確認・更新の取得方法） | どなたでも閲覧可 |
 | [Tsubaiso Intelligence利用ガイド（導入担当者編）](https://support.tsubaiso.jp/hc/ja/articles/62236566701849) | 導入を進める担当者（導入の各工程で使うスキル・Salesforce CLI からの接続） | どなたでも閲覧可 |
