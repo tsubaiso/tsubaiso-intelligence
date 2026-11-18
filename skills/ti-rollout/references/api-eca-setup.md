@@ -190,7 +190,7 @@ ECA の OAuth（コンシューマ鍵・`oauthLink`）はプラットフォー�
 
 ## 注意（読み取り側の制約）
 
-**コンシューマ鍵とコールバックURLは、メタデータの取得（retrieve）とToolingの経路では、パッケージ同梱でもローカル作成でも読み出せない [REQUIRED]。** 自分の組織で自分が作ったECAでも同じで、`sf project retrieve start --metadata "ExtlClntAppOauthSettings:{名前}"` が返すのは `commaSeparatedOauthScopes` / `externalClientApplication` / `isFirstPartyAppEnabled` / `label` / `oauthLink` の5つ、Tooling RESTの `GET /tooling/sobjects/ExtlClntAppOauthSettings/{id}` は `NOT_FOUND`（2026-09-18・トライアル組織のローカル作成ECAで実測）。ローカル作成へ切り替えてもretrieveで取れるようにはならない。**同梱の `Tsubaiso_Intelligence` の鍵は当社が配る固定値（§3）なので、購読側で読み出す必要はない。**
+**ローカル作成のECAのコンシューマ鍵とコールバックURLは、メタデータの取得（retrieve）とToolingの経路では読み出せない [REQUIRED]。** 自分の組織で自分が作ったECAでも同じで、`sf project retrieve start --metadata "ExtlClntAppOauthSettings:{名前}"` が返すのは `commaSeparatedOauthScopes` / `externalClientApplication` / `isFirstPartyAppEnabled` / `label` / `oauthLink` の5つ、Tooling RESTの `GET /tooling/sobjects/ExtlClntAppOauthSettings/{id}` は `NOT_FOUND`（2026-09-18・トライアル組織のローカル作成ECAで実測）。読み出すためにローカル作成へ切り替えても、retrieveでは取れない。パッケージ同梱のECAを retrieve で読み出せるかは実測していない。**同梱の `Tsubaiso_Intelligence` の鍵は当社が配る固定値（§3）なので、購読側で読み出す必要はない。**
 
 **ローカル作成のECAのコンシューマ鍵は、システム管理者がREST APIの `GET /services/data/vXX.X/apps/oauth/credentials/{ECAのId}` で取得できる場合がある。パッケージ同梱のECA 2本では空の応答だった。** コンシューマ鍵は応答の `consumers[].key` に返る。このエンドポイントはSalesforceの開発者向けの資料「[Connect REST API（Core）](https://developer.salesforce.com/docs/platform/connect-rest-api/references/connect-rest-api-core)」の「OAuth Credentials by App ID」（v60.0以降）に記載されているが、どのECAでコンシューマ鍵が返るかの条件は記載されていない。実測の結果を次の表に示す。コンシューマ鍵が返る条件は未確認である。
 
