@@ -113,6 +113,13 @@ DEFAULT_BASELINE = "2026-08-01"
 
 # 読込系ツール（requires.read_path の判定に使う）
 READ_TOOLS = {"Read", "read_file", "read_multiple_files", "get_file_contents"}
+# スキルの記事を開くツール。前置き（mcp__…__）が付くので末尾で当てる。プラグイン 0.90.0 から
+# 手順の本文は references/ でなくスキルの記事にあり、読んだ痕跡はこのツールの呼び出しに残る
+READ_TOOL_SUFFIXES = ("isoppy_get_skill_article", "isoppy_get_article")
+
+
+def _is_read_tool(name):
+    return name in READ_TOOLS or "read" in name.lower() or name.endswith(READ_TOOL_SUFFIXES)
 
 # 書込系ツール（requires.write_path の判定に使う）
 WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit", "write_file", "edit_block",
@@ -498,7 +505,7 @@ def evaluate_turn(point, turn, prior_tools, later_tools=None):
             if req.get("tool") and not _match_tool(req["tool"], w["name"]):
                 continue
             if req.get("read_path"):
-                if w["name"] not in READ_TOOLS and "read" not in w["name"].lower():
+                if not _is_read_tool(w["name"]):
                     continue
                 if not re.search(str(req["read_path"]), _flat(w["input"])):
                     continue
@@ -792,6 +799,13 @@ def selftest(points, probe_store=False):
     except Exception as e:  # noqa: BLE001
         ok = False
         print(f"  ✗ 宣言パーサ: {e}")
+
+    # スキルの記事を開くツールを読込として数える（手順の本文が references/ から記事へ移ったため）
+    art_ok = (_is_read_tool("mcp__plugin_tsubaiso-intelligence-skill_tsubaiso-knowledge__isoppy_get_skill_article")
+              and not _is_read_tool("mcp__tsubaiso-atlas__atlas_write_seam"))
+    if not art_ok:
+        ok = False
+    print(f"  {'✓' if art_ok else '✗'} 読込の判定: スキルの記事の取得を読込に数え、ほかのツールは数えない")
 
     print()
     print("陽性・陰性・未判定の3側とも意図どおり" if ok else "意図と違う結果がある")

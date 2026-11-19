@@ -44,7 +44,7 @@ REASON = (
     "選択リスト値に無い件名の設定・メール記録の作成・要求から除けない参照のみの項目への書き込みは、"
     "更新用のコネクタ（createSobjectRecord・updateSobjectRecord）が会話のツールにあればそれで、"
     "無ければ ti-local-automation（本人権限のローカル実行）で実行する。どちらも使えなければ、"
-    "Salesforce の画面から登録するよう利用者に伝える。詳細は ti-core の references/capability-preflight.md。")
+    "Salesforce の画面から登録するよう利用者に伝える。詳細はスキルの記事 helpdesk/skill-procedure/ti-core_capability-preflight.md。")
 
 
 # Headless 360 の dispatch が受け取る相対パスの頭（ツールの説明の例: /services/data/…・/headless/invoke/…）。

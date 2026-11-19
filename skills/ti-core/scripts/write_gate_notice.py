@@ -79,7 +79,7 @@ def model_context(objects):
         "[TI 書込前ゲートの案内] この呼び出しはツバイソPSA/IMAのレコードを作成する。対象: " + names + "。"
         "このセッションでまだ atlas_write_seam(target=<対象のAPI名>) を引いていないなら、"
         "作成の前に引く。function_only（機能経由でしか作れない）なら直接作らず、応答が示す機能・画面で作る。"
-        "auto_create_as_target なら手で作らない。手順の正本は ti-reference の references/write-index.md。"
+        "auto_create_as_target なら手で作らない。手順の正本はスキルの記事 helpdesk/skill-procedure/ti-reference_write-index.md。"
         "すでに作成してしまった場合は、その事実と対象を利用者へ伝え、ゲートの判定を引いてから扱いを相談する。"
         "このフックは呼び出しを止めない（判定は人とモデルに委ねる）。")
 
@@ -91,7 +91,7 @@ def action_context(actions):
         "参照だけのアクションならこの案内は当てはまらない。レコードを作成・更新・削除するアクションなら、"
         "このセッションでまだ atlas_write_seam(target=<書き込む対象のオブジェクトのAPI名>) を引いていないとき、"
         "実行の前に引き、このアクションが応答の示す経路（機能・画面）に当たるかを確かめる。"
-        "手順の正本は ti-reference の references/write-index.md。"
+        "手順の正本はスキルの記事 helpdesk/skill-procedure/ti-reference_write-index.md。"
         "すでに書き込んでしまった場合は、その事実と対象を利用者へ伝え、ゲートの判定を引いてから扱いを相談する。"
         "このフックは呼び出しを止めない（判定は人とモデルに委ねる）。")
 

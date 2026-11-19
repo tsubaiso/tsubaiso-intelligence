@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tb_mdconfig.py — ti-metadata メタデータ設定の効率化ハーネス（PSA/IMA 整合カスタマイズ）v1.5
 
-前提・クイックスタートは同階層の README.md を参照。
+前提・クイックスタートはスキルの記事 helpdesk/skill-procedure/ti-metadata_README.md を参照。
 
 中核ループ（差分方式）を sf CLI v2 上でラップする:
     [create-sandbox] → retrieve（現状取得・バックアップ）→ diff → checkonly（validation）
