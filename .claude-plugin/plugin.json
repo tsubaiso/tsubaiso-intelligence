@@ -1,6 +1,6 @@
 {
   "name": "tsubaiso-intelligence-skill",
-  "version": "0.92.0",
+  "version": "0.92.1",
   "description": "Tsubaiso Intelligence Skill — PSA/IMA（Salesforce）業務の参照・データ投入・メタデータ構成・帳票・仕様可視化・更新支援・ローカル API 操作と、導入／ロールアウト／PoC／開発運用ライフサイクル判断を担うスキル群。",
   "author": { "name": "TSUBAISO, Inc." },
   "repository": "https://github.com/tsubaiso/tsubaiso-intelligence",
@@ -24,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/skills/ti-core/scripts/write_gate_notice.py || true",
+            "command": "${CLAUDE_PLUGIN_ROOT}/skills/ti-core/scripts/write_gate_notice.sh",
             "timeout": 10
           }
         ]
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/skills/ti-core/scripts/dispatch_usertype_guard.py || true",
+            "command": "${CLAUDE_PLUGIN_ROOT}/skills/ti-core/scripts/dispatch_usertype_guard.sh",
             "timeout": 10
           }
         ]

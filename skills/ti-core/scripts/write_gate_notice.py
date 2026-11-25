@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """write_gate_notice.py — ツバイソPSA/IMAのレコードを作る呼び出しの直前に、書込前ゲートを案内する。
 
-Claude Code の PreToolUse フックとして、配布プラグインの plugin.json から呼ばれる。
+Claude Code の PreToolUse フックとして、配布プラグインの plugin.json から write_gate_notice.sh を経て呼ばれる。
 
 ## なぜ要るか
 

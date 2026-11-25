@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """dispatch_usertype_guard.py — Salesforceの接続の dispatch で書き込むときに userType「builder」を付けさせる。
 
-Claude Code の PreToolUse フックとして、配布プラグインの plugin.json から呼ばれる。
+Claude Code の PreToolUse フックとして、配布プラグインの plugin.json から dispatch_usertype_guard.sh を経て呼ばれる。
 
 ## なぜ要るか
 

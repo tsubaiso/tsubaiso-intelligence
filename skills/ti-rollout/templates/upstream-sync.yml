@@ -89,7 +89,7 @@ jobs:
         run: |
           EXISTING=$(gh pr list --head "$SYNC_BRANCH" --state open --json number -q '.[0].number')
           if [ -n "$EXISTING" ]; then
-            echo "既存の追従 PR #${EXISTING} があります。ブランチを更新し、タイトルを v${VERSION} へ揃えます。"
+            echo "既存の追従 PR 番号 ${EXISTING} があります。ブランチを更新し、タイトルを v${VERSION} へ揃えます。"
             # 先に番号を出力してからタイトルを更新する。順序が逆だと、タイトル更新が
             # 一時エラーで落ちたときに番号が出力されず、その回のマージまで飛ぶ。
             echo "number=${EXISTING}" >> "$GITHUB_OUTPUT"
@@ -126,9 +126,9 @@ jobs:
           # いずれも人の判断が要るものなので、失敗しても止めず PR を open のまま残す。
           # 次回の実行と滞留通知がそのまま拾う。
           if gh pr merge "$NUMBER" --merge; then
-            echo "追従 PR #${NUMBER}（v${VERSION}）をマージしました。組織マーケットプレイスの同期が発火します。"
+            echo "追従 PR 番号 ${NUMBER}（v${VERSION}）をマージしました。組織マーケットプレイスの同期が発火します。"
           else
-            echo "追従 PR #${NUMBER} をマージできませんでした。open のまま残し、管理者の判断に回します。"
+            echo "追従 PR 番号 ${NUMBER} をマージできませんでした。open のまま残し、管理者の判断に回します。"
           fi
 
       - name: 未マージのまま滞留していたら知らせる

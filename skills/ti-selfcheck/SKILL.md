@@ -5,7 +5,7 @@ version: 1.0.0
 updated: 2026-11-18
 ---
 
-<!-- plugin-version: 0.92.0 -->
+<!-- plugin-version: 0.92.1 -->
 
 # ti-selfcheck
 
